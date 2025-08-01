@@ -99,14 +99,14 @@ After Phase 2:
 - [x] Task 3: Apply exclusion masks during comparison (depends on 2, 12)
 - [x] Task 11: Integrate classifiers into pipeline (depends on 6-10)
 
-### Phase 4: CLI & Basic Reporting
+### Phase 4: CLI & Basic Reporting ✅ COMPLETED
 
 After Phase 3:
 
-- [ ] Task 4: Add CSS selector support (depends on 3)
-- [ ] Task 13: Add --smart-diff CLI option (depends on 11)
-- [ ] Task 14: Add --focus CLI option (depends on 11)
-- [ ] Task 20: Add regions array to JSON output (depends on 11)
+- [x] Task 4: Add CSS selector support (depends on 3)
+- [x] Task 13: Add --smart-diff CLI option (depends on 11)
+- [x] Task 14: Add --focus CLI option (depends on 11)
+- [x] Task 20: Add regions array to JSON output (depends on 11)
 
 ### Phase 5: Enhanced Reporting
 

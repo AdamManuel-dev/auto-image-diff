@@ -243,14 +243,69 @@ export class BatchProcessor {
   }
 
   /**
+   * Aggregate classifications across all results
+   */
+  private aggregateClassifications(results: BatchResult): {
+    totalRegions: number;
+    byType: Record<string, number>;
+    avgConfidence: number;
+  } {
+    const allClassifications = results.results
+      .filter((r) => r.result?.classification)
+      .flatMap((r) => {
+        // TypeScript already knows these are defined from the filter above
+        const classification = r.result?.classification;
+        return classification ? classification.regions : [];
+      });
+
+    const byType: Record<string, number> = {};
+    let totalConfidence = 0;
+
+    for (const region of allClassifications) {
+      const type = region.classification.type;
+      byType[type] = (byType[type] || 0) + 1;
+      totalConfidence += region.classification.confidence;
+    }
+
+    return {
+      totalRegions: allClassifications.length,
+      byType,
+      avgConfidence:
+        allClassifications.length > 0 ? totalConfidence / allClassifications.length : 0,
+    };
+  }
+
+  /**
    * Generate HTML report for batch results
    */
   private async generateBatchReport(results: BatchResult, outputDir: string): Promise<void> {
     const reportPath = path.join(outputDir, "batch-report.json");
     const htmlReportPath = path.join(outputDir, "index.html");
 
+    // Enhanced report with regions
+    const enhancedResults = {
+      ...results,
+      allRegions: results.results
+        .filter((r) => r.result?.classification)
+        .flatMap((r) => {
+          const classification = r.result?.classification;
+          if (!classification) return [];
+          return classification.regions.map((region) => ({
+            file: path.basename(r.reference),
+            ...region.region,
+            classification: {
+              type: region.classification.type,
+              confidence: region.classification.confidence,
+              classifier: region.classifier,
+              details: region.classification.details,
+            },
+          }));
+        }),
+      classificationSummary: this.aggregateClassifications(results),
+    };
+
     // Save JSON report
-    await fs.writeFile(reportPath, JSON.stringify(results, null, 2), "utf-8");
+    await fs.writeFile(reportPath, JSON.stringify(enhancedResults, null, 2), "utf-8");
 
     // Generate HTML report
     const html = this.generateHtmlReport(results, outputDir);

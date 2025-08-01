@@ -26,6 +26,46 @@ program
   .description("Automatically align UI screenshots and generate visual difference reports")
   .version("0.1.0");
 
+// Helper function to generate recommendations based on classification
+function generateRecommendation(classification: import("./lib/classifiers/manager").ClassificationSummary): string {
+  const { byType, confidence } = classification;
+  
+  // If confidence is low, suggest manual review
+  if (confidence.avg < 0.5) {
+    return "Low confidence in classification. Manual review recommended.";
+  }
+  
+  // Get the dominant change type
+  const dominantType = Object.entries(byType)
+    .filter(([type]) => type !== "unknown")
+    .sort(([, a], [, b]) => b - a)[0];
+    
+  if (!dominantType || dominantType[1] === 0) {
+    return "No significant changes detected.";
+  }
+  
+  const [type] = dominantType;
+  
+  switch (type) {
+    case "content":
+      return "Content changes detected. Review text and image updates.";
+    case "style":
+      return "Style changes detected. Check CSS and theme modifications.";
+    case "layout":
+      return "Layout shifts detected. Verify responsive design and positioning.";
+    case "size":
+      return "Size changes detected. Check scaling and dimension adjustments.";
+    case "structural":
+      return "Structural changes detected. Review DOM modifications.";
+    case "new_element":
+      return "New elements detected. Verify feature additions.";
+    case "removed_element":
+      return "Elements removed. Check for missing functionality.";
+    default:
+      return "Changes detected. Manual review recommended.";
+  }
+}
+
 program
   .command("align")
   .description("Align two images based on content")
@@ -66,12 +106,14 @@ program
   .option("--no-lowlight", "Disable lowlighting of unchanged areas")
   .option("-e, --exclude <regions>", "Path to exclusions.json file defining regions to ignore")
   .option("-s, --smart", "Run smart classification on differences")
+  .option("--smart-diff", "Generate detailed smart diff report with classifications")
+  .option("-f, --focus <types>", "Focus on specific change types (comma-separated: content,style,layout,size,structural)")
   .action(
     async (
       image1: string,
       image2: string,
       output: string,
-      options: { color: string; lowlight: boolean; exclude?: string; smart?: boolean }
+      options: { color: string; lowlight: boolean; exclude?: string; smart?: boolean; smartDiff?: boolean; focus?: string }
     ) => {
       try {
         console.log("Generating visual diff...");
@@ -93,7 +135,7 @@ program
           highlightColor: options.color,
           lowlight: options.lowlight,
           exclusions,
-          runClassification: options.smart,
+          runClassification: options.smart || options.smartDiff,
         });
 
         console.log(`✅ Diff image saved to: ${output}`);
@@ -107,12 +149,37 @@ program
         
         // Output classification results if available
         if (result.classification) {
+          let classification = result.classification;
+          
+          // Apply focus filter if specified
+          if (options.focus) {
+            const focusTypes = options.focus.split(",").map(t => t.trim().toLowerCase());
+            const filteredRegions = classification.regions.filter(r => 
+              focusTypes.includes(r.classification.type.toLowerCase())
+            );
+            
+            // Recalculate statistics for filtered regions
+            classification = {
+              ...classification,
+              regions: filteredRegions,
+              classifiedRegions: filteredRegions.length,
+              byType: Object.fromEntries(
+                Object.entries(classification.byType).map(([type, _]) => [
+                  type,
+                  filteredRegions.filter(r => r.classification.type === type as import("./lib/classifiers/base").DifferenceType).length
+                ])
+              ) as Record<import("./lib/classifiers/base").DifferenceType, number>,
+            };
+            
+            console.log(`\n🎯 Focused on: ${focusTypes.join(", ")}`);
+          }
+          
           console.log(`\n🔍 Classification Results:`);
-          console.log(`   - Analyzed regions: ${result.classification.totalRegions}`);
-          console.log(`   - Classified: ${result.classification.classifiedRegions}`);
+          console.log(`   - Analyzed regions: ${classification.totalRegions}`);
+          console.log(`   - Classified: ${classification.classifiedRegions}`);
           
           // Show breakdown by type
-          const byType = result.classification.byType;
+          const byType = classification.byType;
           const typeBreakdown = Object.entries(byType)
             .filter(([_, count]) => count > 0)
             .map(([type, count]) => `${type}: ${count}`)
@@ -123,10 +190,44 @@ program
           }
           
           console.log(
-            `   - Confidence: min=${result.classification.confidence.min.toFixed(2)}, ` +
-            `avg=${result.classification.confidence.avg.toFixed(2)}, ` +
-            `max=${result.classification.confidence.max.toFixed(2)}`
+            `   - Confidence: min=${classification.confidence.min.toFixed(2)}, ` +
+            `avg=${classification.confidence.avg.toFixed(2)}, ` +
+            `max=${classification.confidence.max.toFixed(2)}`
           );
+        }
+
+        // Generate detailed smart diff report if requested
+        if (options.smartDiff && result.classification) {
+          const reportPath = output.replace(/\.[^.]+$/, "-smart-report.json");
+          const smartReport = {
+            metadata: {
+              image1,
+              image2,
+              diffImage: output,
+              timestamp: new Date().toISOString(),
+              version: "1.0",
+            },
+            statistics: result.statistics,
+            classification: result.classification,
+            regions: result.classification.regions.map(r => ({
+              id: r.region.id,
+              bounds: r.region.bounds,
+              type: r.classification.type,
+              confidence: r.classification.confidence,
+              classifier: r.classifier,
+              details: r.classification.details,
+            })),
+            summary: {
+              hasSignificantChanges: result.statistics.percentageDifferent > 0.5,
+              primaryChangeType: Object.entries(result.classification.byType)
+                .filter(([type]) => type !== "unknown")
+                .sort(([, a], [, b]) => b - a)[0]?.[0] || "unknown",
+              recommendedAction: generateRecommendation(result.classification),
+            },
+          };
+
+          await fs.writeFile(reportPath, JSON.stringify(smartReport, null, 2));
+          console.log(`\n📄 Smart diff report saved to: ${reportPath}`);
         }
       } catch (error) {
         console.error(
@@ -203,6 +304,19 @@ program
               threshold: parseFloat(options.threshold),
               timestamp: new Date().toISOString(),
               classification: result.classification,
+              regions: result.classification?.regions.map(r => ({
+                id: r.region.id,
+                name: `Region ${r.region.id}`,
+                bounds: r.region.bounds,
+                differencePixels: r.region.differencePixels,
+                differencePercentage: r.region.differencePercentage,
+                classification: {
+                  type: r.classification.type,
+                  confidence: r.classification.confidence,
+                  classifier: r.classifier,
+                  details: r.classification.details,
+                },
+              })) || [],
             },
             null,
             2
