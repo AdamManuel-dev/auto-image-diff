@@ -176,8 +176,14 @@ export class BatchProcessor {
           imageExtensions.includes(path.extname(entry.name).toLowerCase())
         ) {
           // Simple pattern matching (could be enhanced with glob library)
-          if (pattern === "*.png" || pattern === "*") {
+          if (pattern === "*") {
             files.push(fullPath);
+          } else if (pattern.startsWith("*")) {
+            // Handle patterns like *.png, *.jpg, etc.
+            const expectedExt = pattern.substring(1); // Remove the *
+            if (path.extname(entry.name).toLowerCase() === expectedExt.toLowerCase()) {
+              files.push(fullPath);
+            }
           } else if (pattern.includes(path.extname(entry.name))) {
             files.push(fullPath);
           }

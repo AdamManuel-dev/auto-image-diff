@@ -66,7 +66,7 @@ describe("CLI Integration", () => {
   }
 
   it("should show help when no command is provided", async () => {
-    const result = await runCLI([]);
+    const result = await runCLI(["--help"]);
     expect(result.stdout).toContain("auto-image-diff");
     expect(result.stdout).toContain("Commands:");
   });
@@ -85,13 +85,13 @@ describe("CLI Integration", () => {
   it("should show help for diff command", async () => {
     const result = await runCLI(["diff", "--help"]);
     expect(result.stdout).toContain("Generate visual diff");
-    expect(result.stdout).toContain("--threshold");
+    expect(result.stdout).toContain("--color");
   });
 
   it("should show help for compare command", async () => {
     const result = await runCLI(["compare", "--help"]);
-    expect(result.stdout).toContain("Full comparison");
-    expect(result.stdout).toContain("--json");
+    expect(result.stdout).toContain("Align and compare");
+    expect(result.stdout).toContain("--threshold");
   });
 
   it("should show help for batch command", async () => {

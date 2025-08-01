@@ -151,7 +151,9 @@ describe("BatchProcessor Edge Cases", () => {
         }),
       }));
 
-      const result = await processor.processBatch("/ref", "/target", {
+      // Create a new processor instance with the updated mock
+      const newProcessor = new BatchProcessor();
+      const result = await newProcessor.processBatch("/ref", "/target", {
         outputDir: "/out",
       });
 

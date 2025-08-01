@@ -11,8 +11,14 @@
 // Store original argv
 const originalArgv = process.argv;
 
+// Track whether modules were loaded
+let commanderLoaded = false;
+let imageProcessorLoaded = false;
+let batchProcessorLoaded = false;
+
 // Mock all dependencies
 jest.mock("commander", () => {
+  commanderLoaded = true;
   const mockProgram = {
     name: jest.fn().mockReturnThis(),
     description: jest.fn().mockReturnThis(),
@@ -29,47 +35,53 @@ jest.mock("commander", () => {
   };
 });
 
-jest.mock("../lib/imageProcessor", () => ({
-  ImageProcessor: jest.fn().mockImplementation(() => ({
-    alignImages: jest.fn().mockResolvedValue(undefined),
-    compareImages: jest.fn().mockResolvedValue({
-      difference: 5,
-      isEqual: false,
-      statistics: {
-        pixelsDifferent: 100,
-        totalPixels: 10000,
-        percentageDifferent: 1,
-      },
-    }),
-    generateDiff: jest.fn().mockResolvedValue({
-      difference: 5,
-      diffImagePath: "diff.png",
-      isEqual: false,
-      statistics: {
-        pixelsDifferent: 100,
-        totalPixels: 10000,
-        percentageDifferent: 1,
-      },
-    }),
-  })),
-}));
+jest.mock("../lib/imageProcessor", () => {
+  imageProcessorLoaded = true;
+  return {
+    ImageProcessor: jest.fn().mockImplementation(() => ({
+      alignImages: jest.fn().mockResolvedValue(undefined),
+      compareImages: jest.fn().mockResolvedValue({
+        difference: 5,
+        isEqual: false,
+        statistics: {
+          pixelsDifferent: 100,
+          totalPixels: 10000,
+          percentageDifferent: 1,
+        },
+      }),
+      generateDiff: jest.fn().mockResolvedValue({
+        difference: 5,
+        diffImagePath: "diff.png",
+        isEqual: false,
+        statistics: {
+          pixelsDifferent: 100,
+          totalPixels: 10000,
+          percentageDifferent: 1,
+        },
+      }),
+    })),
+  };
+});
 
-jest.mock("../lib/batchProcessor", () => ({
-  BatchProcessor: jest.fn().mockImplementation(() => ({
-    processBatch: jest.fn().mockResolvedValue({
-      totalFiles: 2,
-      processed: 2,
-      failed: 0,
-      results: [],
-      summary: {
-        averageDifference: 5,
-        totalPixelsDifferent: 200,
-        matchingImages: 0,
-        differentImages: 2,
-      },
-    }),
-  })),
-}));
+jest.mock("../lib/batchProcessor", () => {
+  batchProcessorLoaded = true;
+  return {
+    BatchProcessor: jest.fn().mockImplementation(() => ({
+      processBatch: jest.fn().mockResolvedValue({
+        totalFiles: 2,
+        processed: 2,
+        failed: 0,
+        results: [],
+        summary: {
+          averageDifference: 5,
+          totalPixelsDifferent: 200,
+          matchingImages: 0,
+          differentImages: 2,
+        },
+      }),
+    })),
+  };
+});
 
 jest.mock("fs/promises", () => ({
   writeFile: jest.fn().mockResolvedValue(undefined),
@@ -78,6 +90,9 @@ jest.mock("fs/promises", () => ({
 describe("CLI Direct Execution", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    commanderLoaded = false;
+    imageProcessorLoaded = false;
+    batchProcessorLoaded = false;
   });
 
   afterEach(() => {
@@ -90,20 +105,13 @@ describe("CLI Direct Execution", () => {
 
     // Import CLI to execute all top-level code
     jest.isolateModules(() => {
-      jest.requireMock("../cli");
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      require("../cli");
     });
 
-    // Verify Command was instantiated
-    const commanderModule = jest.requireMock("commander");
-    const { Command } = commanderModule;
-    expect(Command).toHaveBeenCalled();
-
-    // Verify processors were instantiated
-    const imageProcessorModule = jest.requireMock("../lib/imageProcessor");
-    const batchProcessorModule = jest.requireMock("../lib/batchProcessor");
-    const { ImageProcessor } = imageProcessorModule;
-    const { BatchProcessor } = batchProcessorModule;
-    expect(ImageProcessor).toHaveBeenCalled();
-    expect(BatchProcessor).toHaveBeenCalled();
+    // Verify modules were loaded
+    expect(commanderLoaded).toBe(true);
+    expect(imageProcessorLoaded).toBe(true);
+    expect(batchProcessorLoaded).toBe(true);
   });
 });

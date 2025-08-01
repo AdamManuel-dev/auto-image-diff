@@ -8,7 +8,6 @@
  * Patterns: Jest, coverage testing
  */
 
-import { ImageProcessor } from "../lib/imageProcessor";
 import * as fs from "fs/promises";
 
 // Mock dependencies
@@ -27,23 +26,16 @@ jest.mock("gm", () => ({
 }));
 
 describe("ImageProcessor Edge Cases", () => {
-  let processor: ImageProcessor;
-  let mockExecAsync: jest.Mock;
-
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Create mock execAsync
-    mockExecAsync = jest.fn();
-    const utilModule = jest.requireMock("util");
-    const { promisify } = utilModule;
-    (promisify as jest.Mock).mockReturnValue(mockExecAsync);
-
-    processor = new ImageProcessor();
+    jest.resetModules();
   });
 
   describe("alignImages edge cases", () => {
     it("should handle convert command with offset", async () => {
+      // Create mock execAsync
+      const mockExecAsync = jest.fn();
+
       // Mock subimage search returning offset
       mockExecAsync.mockRejectedValueOnce({
         stdout: "",
@@ -52,6 +44,16 @@ describe("ImageProcessor Edge Cases", () => {
       // Mock convert command success
       mockExecAsync.mockResolvedValueOnce({ stdout: "", stderr: "" });
 
+      // Mock util module
+      jest.doMock("util", () => ({
+        ...jest.requireActual("util"),
+        promisify: jest.fn(() => mockExecAsync),
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { ImageProcessor } = require("../lib/imageProcessor");
+      const processor = new ImageProcessor();
+
       await processor.alignImages("ref.png", "target.png", "out.png");
 
       expect(mockExecAsync).toHaveBeenCalledWith(expect.stringContaining("convert"));
@@ -59,6 +61,9 @@ describe("ImageProcessor Edge Cases", () => {
     });
 
     it("should handle cp command when no offset", async () => {
+      // Create mock execAsync
+      const mockExecAsync = jest.fn();
+
       // Mock subimage search returning no offset
       mockExecAsync.mockRejectedValueOnce({
         stdout: "",
@@ -67,14 +72,42 @@ describe("ImageProcessor Edge Cases", () => {
       // Mock cp command success
       mockExecAsync.mockResolvedValueOnce({ stdout: "", stderr: "" });
 
+      // Mock util module
+      jest.doMock("util", () => ({
+        ...jest.requireActual("util"),
+        promisify: jest.fn(() => mockExecAsync),
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { ImageProcessor } = require("../lib/imageProcessor");
+      const processor = new ImageProcessor();
+
       await processor.alignImages("ref.png", "target.png", "out.png");
 
       expect(mockExecAsync).toHaveBeenCalledWith(expect.stringContaining("cp"));
     });
 
     it("should handle alignment errors", async () => {
-      // Mock command failure
+      // Create mock execAsync
+      const mockExecAsync = jest.fn();
+
+      // First call (subimage search) - return with no offset
+      mockExecAsync.mockRejectedValueOnce({
+        stdout: "",
+        stderr: "0 @ 0,0",
+      });
+      // Second call (cp command) - fail
       mockExecAsync.mockRejectedValueOnce(new Error("Command failed"));
+
+      // Mock util module
+      jest.doMock("util", () => ({
+        ...jest.requireActual("util"),
+        promisify: jest.fn(() => mockExecAsync),
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { ImageProcessor } = require("../lib/imageProcessor");
+      const processor = new ImageProcessor();
 
       await expect(processor.alignImages("ref.png", "target.png", "out.png")).rejects.toThrow(
         "Failed to align images"
@@ -84,8 +117,21 @@ describe("ImageProcessor Edge Cases", () => {
 
   describe("compareImages edge cases", () => {
     it("should handle successful compare", async () => {
+      // Create mock execAsync
+      const mockExecAsync = jest.fn();
+
       // Mock successful compare
       mockExecAsync.mockResolvedValueOnce({ stdout: "500", stderr: "" });
+
+      // Mock util module
+      jest.doMock("util", () => ({
+        ...jest.requireActual("util"),
+        promisify: jest.fn(() => mockExecAsync),
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { ImageProcessor } = require("../lib/imageProcessor");
+      const processor = new ImageProcessor();
 
       const result = await processor.compareImages("img1.png", "img2.png");
 
@@ -94,21 +140,51 @@ describe("ImageProcessor Edge Cases", () => {
     });
 
     it("should handle compare error without stdout", async () => {
-      // Mock error without stdout
-      mockExecAsync.mockRejectedValueOnce(new Error("No stdout"));
+      // Create mock execAsync
+      const mockExecAsync = jest.fn();
 
-      await expect(processor.compareImages("img1.png", "img2.png")).rejects.toThrow("No stdout");
+      // Mock error without stdout - this will be re-thrown
+      const errorWithoutStdout = new Error("Command failed");
+      mockExecAsync.mockRejectedValueOnce(errorWithoutStdout);
+
+      // Mock util module
+      jest.doMock("util", () => ({
+        ...jest.requireActual("util"),
+        promisify: jest.fn(() => mockExecAsync),
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { ImageProcessor } = require("../lib/imageProcessor");
+      const processor = new ImageProcessor();
+
+      await expect(processor.compareImages("img1.png", "img2.png")).rejects.toThrow(
+        "Command failed"
+      );
     });
   });
 
   describe("generateDiff edge cases", () => {
     it("should handle successful diff generation", async () => {
+      // Create mock execAsync
+      const mockExecAsync = jest.fn();
+
       // Mock successful diff generation
       mockExecAsync.mockRejectedValueOnce(new Error("Expected non-zero"));
-      // Mock fs.access to say file exists
-      (fs.access as jest.Mock).mockResolvedValueOnce(undefined);
       // Mock successful compare for metrics
       mockExecAsync.mockRejectedValueOnce({ stdout: "100", stderr: "" });
+
+      // Mock util module
+      jest.doMock("util", () => ({
+        ...jest.requireActual("util"),
+        promisify: jest.fn(() => mockExecAsync),
+      }));
+
+      // Mock fs.access to say file exists
+      (fs.access as jest.Mock).mockResolvedValueOnce(undefined);
+
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { ImageProcessor } = require("../lib/imageProcessor");
+      const processor = new ImageProcessor();
 
       const result = await processor.generateDiff("img1.png", "img2.png", "diff.png");
 
@@ -116,10 +192,26 @@ describe("ImageProcessor Edge Cases", () => {
     });
 
     it("should handle diff generation failure when file not created", async () => {
+      // Create mock execAsync
+      const mockExecAsync = jest.fn();
+
       // Mock diff generation failure
       mockExecAsync.mockRejectedValueOnce(new Error("Diff failed"));
-      // Mock fs.access to say file doesn't exist
-      (fs.access as jest.Mock).mockRejectedValueOnce(new Error("ENOENT"));
+
+      // Mock util module
+      jest.doMock("util", () => ({
+        ...jest.requireActual("util"),
+        promisify: jest.fn(() => mockExecAsync),
+      }));
+
+      // Need to mock fs module before ImageProcessor is loaded
+      jest.doMock("fs/promises", () => ({
+        access: jest.fn().mockRejectedValueOnce(new Error("ENOENT")),
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { ImageProcessor } = require("../lib/imageProcessor");
+      const processor = new ImageProcessor();
 
       await expect(processor.generateDiff("img1.png", "img2.png", "diff.png")).rejects.toThrow(
         "Failed to generate diff"
@@ -129,12 +221,21 @@ describe("ImageProcessor Edge Cases", () => {
 
   describe("fileExists edge cases", () => {
     it("should return false when file doesn't exist", async () => {
-      // Mock fs.access failure
-      (fs.access as jest.Mock).mockRejectedValueOnce(new Error("ENOENT"));
+      // Reset modules to ensure clean state
+      jest.resetModules();
+
+      // Mock fs module
+      jest.doMock("fs/promises", () => ({
+        access: jest.fn().mockRejectedValueOnce(new Error("ENOENT")),
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { ImageProcessor } = require("../lib/imageProcessor");
+      const processor = new ImageProcessor();
 
       // Access private method through any casting
-      const fileExists = (processor as any).fileExists.bind(processor);
-      const result = await fileExists("nonexistent.png");
+      const fileExists = processor.fileExists;
+      const result = await fileExists.call(processor, "nonexistent.png");
 
       expect(result).toBe(false);
     });

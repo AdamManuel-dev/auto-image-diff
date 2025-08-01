@@ -8,10 +8,8 @@
  * Patterns: TypeScript, CommonJS modules, async/await
  */
 
-export {
-  ImageProcessor,
-  ComparisonResult,
-  AlignmentOptions,
-} from "./lib/imageProcessor";
+export { ImageProcessor, ComparisonResult, AlignmentOptions } from "./lib/imageProcessor";
+
+export { BatchProcessor, BatchResult, BatchOptions } from "./lib/batchProcessor";
 
 // CLI is handled separately in cli.ts

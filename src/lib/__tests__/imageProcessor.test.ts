@@ -85,7 +85,8 @@ describe("ImageProcessor", () => {
     mockFsAccess.mockResolvedValue(undefined);
 
     // Create processor after mocks are set up
-    const imageProcessorModule = jest.requireMock("../imageProcessor");
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const imageProcessorModule = require("../imageProcessor");
     ImageProcessor = imageProcessorModule.ImageProcessor;
     processor = new ImageProcessor();
   });

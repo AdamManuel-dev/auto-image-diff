@@ -10,20 +10,22 @@
 
 describe("Module exports", () => {
   it("should export ImageProcessor", () => {
-    const exports = jest.requireMock("./index");
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const exports = require("./index");
     expect(exports.ImageProcessor).toBeDefined();
     expect(typeof exports.ImageProcessor).toBe("function");
   });
 
   it("should export BatchProcessor", () => {
-    const exports = jest.requireMock("./index");
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const exports = require("./index");
     expect(exports.BatchProcessor).toBeDefined();
     expect(typeof exports.BatchProcessor).toBe("function");
   });
 
   it("should instantiate ImageProcessor", () => {
-    const indexModule = jest.requireMock("./index");
-    const { ImageProcessor } = indexModule;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { ImageProcessor } = require("./index");
     const processor = new ImageProcessor();
     expect(processor).toBeDefined();
     expect(processor.alignImages).toBeDefined();
@@ -32,8 +34,8 @@ describe("Module exports", () => {
   });
 
   it("should instantiate BatchProcessor", () => {
-    const indexModule = jest.requireMock("./index");
-    const { BatchProcessor } = indexModule;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { BatchProcessor } = require("./index");
     const processor = new BatchProcessor();
     expect(processor).toBeDefined();
     expect(processor.processBatch).toBeDefined();

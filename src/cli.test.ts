@@ -40,20 +40,20 @@ describe("CLI Direct Tests", () => {
   it("should show diff help", async () => {
     const { stdout } = await execAsync(`npx ts-node ${cliPath} diff --help`);
     expect(stdout).toContain("Generate visual diff");
-    expect(stdout).toContain("--threshold");
     expect(stdout).toContain("--color");
+    expect(stdout).toContain("--no-lowlight");
   });
 
   it("should show compare help", async () => {
     const { stdout } = await execAsync(`npx ts-node ${cliPath} compare --help`);
-    expect(stdout).toContain("Full comparison");
-    expect(stdout).toContain("--json");
+    expect(stdout).toContain("Align and compare");
+    expect(stdout).toContain("--threshold");
   });
 
   it("should show batch help", async () => {
     const { stdout } = await execAsync(`npx ts-node ${cliPath} batch --help`);
     expect(stdout).toContain("Process multiple");
     expect(stdout).toContain("--pattern");
-    expect(stdout).toContain("--parallel");
+    expect(stdout).toContain("--no-parallel");
   });
 });
