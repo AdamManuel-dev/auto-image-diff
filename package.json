@@ -10,12 +10,22 @@
   "scripts": {
     "build": "tsc",
     "dev": "ts-node",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test": "NODE_OPTIONS='--max-old-space-size=4096' jest",
+    "test:watch": "NODE_OPTIONS='--max-old-space-size=4096' jest --watch",
+    "test:coverage": "NODE_OPTIONS='--max-old-space-size=4096' jest --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix"
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   },
   "repository": {
     "type": "git",
@@ -46,7 +56,9 @@
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
+    "husky": "^9.1.7",
     "jest": "^30.0.5",
+    "lint-staged": "^16.1.2",
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",

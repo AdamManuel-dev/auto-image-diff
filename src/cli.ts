@@ -12,10 +12,12 @@
 import { Command } from "commander";
 import * as path from "path";
 import { ImageProcessor } from "./lib/imageProcessor";
+import { BatchProcessor } from "./lib/batchProcessor";
 import * as fs from "fs/promises";
 
 const program = new Command();
 const imageProcessor = new ImageProcessor();
+const batchProcessor = new BatchProcessor();
 
 program
   .name("auto-image-diff")
@@ -181,6 +183,75 @@ program
       } catch (error) {
         console.error(
           "❌ Error in comparison:",
+          error instanceof Error ? error.message : String(error),
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+program
+  .command("batch")
+  .description("Process multiple images in batch mode")
+  .argument("<reference-dir>", "Directory containing reference images")
+  .argument("<target-dir>", "Directory containing target images")
+  .argument("<output-dir>", "Output directory for results")
+  .option("-p, --pattern <pattern>", "File pattern to match", "*.png")
+  .option("-r, --recursive", "Scan directories recursively", true)
+  .option(
+    "-t, --threshold <threshold>",
+    "Difference threshold percentage",
+    "0.1",
+  )
+  .option("--no-parallel", "Disable parallel processing")
+  .action(
+    async (
+      referenceDir: string,
+      targetDir: string,
+      outputDir: string,
+      options: {
+        pattern: string;
+        recursive: boolean;
+        threshold: string;
+        parallel: boolean;
+      },
+    ) => {
+      try {
+        console.log("Starting batch processing...");
+        console.log(`Reference directory: ${referenceDir}`);
+        console.log(`Target directory: ${targetDir}`);
+        console.log(`Output directory: ${outputDir}`);
+
+        const result = await batchProcessor.processBatch(
+          referenceDir,
+          targetDir,
+          {
+            pattern: options.pattern,
+            recursive: options.recursive,
+            outputDir,
+            threshold: parseFloat(options.threshold),
+            parallel: options.parallel,
+          },
+        );
+
+        console.log("\n✅ Batch processing complete!");
+        console.log(`📊 Summary:`);
+        console.log(`   - Total files: ${result.totalFiles}`);
+        console.log(`   - Processed: ${result.processed}`);
+        console.log(`   - Failed: ${result.failed}`);
+        console.log(`   - Matching images: ${result.summary.matchingImages}`);
+        console.log(`   - Different images: ${result.summary.differentImages}`);
+        console.log(
+          `   - Average difference: ${result.summary.averageDifference.toFixed(4)}`,
+        );
+        console.log(`\n📁 Results saved to: ${outputDir}`);
+        console.log(`   - HTML report: ${path.join(outputDir, "index.html")}`);
+        console.log(
+          `   - JSON report: ${path.join(outputDir, "batch-report.json")}`,
+        );
+      } catch (error) {
+        console.error(
+          "❌ Error in batch processing:",
           error instanceof Error ? error.message : String(error),
         );
         process.exit(1);
