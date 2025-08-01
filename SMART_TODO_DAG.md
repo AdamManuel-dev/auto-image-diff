@@ -80,17 +80,17 @@ graph TD
 - [x] Task 1: Create exclusions.json schema and parser
 - [x] Task 5: Create difference classifier base architecture
 
-### Phase 2: Core Components (Parallel)
+### Phase 2: Core Components (Parallel) ✅ COMPLETED
 
 After Phase 1:
 
-- [ ] Task 2: Implement mask generation for excluded regions
-- [ ] Task 12: Add --exclude REGIONS CLI option
-- [ ] Task 6: Implement content changes classifier
-- [ ] Task 7: Implement style changes classifier
-- [ ] Task 8: Implement layout shifts classifier
-- [ ] Task 9: Implement size changes classifier
-- [ ] Task 10: Implement new/removed elements classifier
+- [x] Task 2: Implement mask generation for excluded regions
+- [x] Task 12: Add --exclude REGIONS CLI option
+- [x] Task 6: Implement content changes classifier
+- [x] Task 7: Implement style changes classifier
+- [x] Task 8: Implement layout shifts classifier
+- [x] Task 9: Implement size changes classifier
+- [x] Task 10: Implement new/removed elements classifier
 
 ### Phase 3: Integration
 
