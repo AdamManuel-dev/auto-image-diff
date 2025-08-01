@@ -6,6 +6,7 @@
 import { PngMetadataEmbedder, EmbeddedMetadata } from "../lib/png-metadata";
 import { ComparisonResult } from "../lib/imageProcessor";
 import { ClassificationSummary } from "../lib/classifiers/manager";
+import { DifferenceType } from "../lib/classifiers/base";
 import { EnhancedMetadata } from "../lib/metadata-enhancer";
 import * as fs from "fs/promises";
 import * as path from "path";
@@ -245,16 +246,28 @@ describe("PngMetadataEmbedder", () => {
         totalRegions: 3,
         classifiedRegions: 3,
         unclassifiedRegions: 0,
-        byType: { content: 2, style: 1, layout: 0, text: 0, unknown: 0 },
+        byType: {
+          content: 2,
+          style: 1,
+          layout: 0,
+          size: 0,
+          structural: 0,
+          new_element: 0,
+          removed_element: 0,
+          unknown: 0,
+        },
         confidence: { min: 0.8, avg: 0.9, max: 0.95 },
         regions: [
           {
             region: {
               id: 1,
               bounds: { x: 0, y: 0, width: 100, height: 100 },
+              pixelCount: 10000,
+              differencePixels: 500,
+              differencePercentage: 5.0,
             },
             classification: {
-              type: "content",
+              type: DifferenceType.CONTENT,
               confidence: 0.9,
             },
             classifier: "text",
