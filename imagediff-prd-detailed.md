@@ -112,7 +112,7 @@ Start → Install Tool → Configure Settings → Run Comparison → Review Resu
   |    Package Mgr    Config File          CLI Command      HTML Report    Pass/Fail
   |    or Binary      or Defaults          or Script        or JSON        Decision
   |                                             |
-  └─────────────── Iterate as Needed ──────────┘
+  └─────────────── Iterate as Needed ───────────┘
 ```
 
 ## 6. Functional Requirements
