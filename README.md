@@ -33,6 +33,17 @@ auto-image-diff uses ImageMagick's powerful image processing capabilities to:
 - ⚡ **Fast**: Leverages ImageMagick's optimized C++ implementation
 - 📝 **TypeScript**: Fully typed for better developer experience
 
+### ✨ Advanced Features
+
+- 🤖 **Smart Classification**: Automatically categorizes changes (content, style, layout, etc.)
+- 🎯 **Exclusion Regions**: Define areas to ignore (timestamps, dynamic content)
+- 🔄 **Progressive Refinement**: Iteratively improve accuracy by learning patterns
+- 🎨 **CSS Fix Suggestions**: Automatically generate CSS to fix style differences
+- 📦 **Batch Processing**: Process multiple images with parallel execution
+- 🏷️ **Metadata Embedding**: Embed comparison data directly in PNG files
+- 📈 **Interactive Reports**: HTML reports with before/after sliders and visualizations
+- 🔍 **Smart File Pairing**: Fuzzy matching for batch comparisons
+
 ## 📦 Installation
 
 ### Prerequisites
@@ -73,6 +84,15 @@ auto-image-diff align reference.png target.png aligned.png
 
 # Just generate diff (for pre-aligned images)
 auto-image-diff diff image1.png image2.png diff.png
+
+# Batch processing
+auto-image-diff batch reference-dir/ target-dir/ output-dir/
+
+# Read embedded metadata
+auto-image-diff read-metadata diff-image.png
+
+# Progressive refinement (interactive)
+auto-image-diff refine before.png after.png --output-dir refinement/
 ```
 
 ### Options
@@ -85,11 +105,28 @@ auto-image-diff diff image1.png image2.png diff.png
 
 - `-c, --color <color>`: Highlight color for differences (default: "red")
 - `--no-lowlight`: Disable lowlighting of unchanged areas
+- `--classify`: Enable smart classification of changes
+- `--suggest-css`: Generate CSS fix suggestions
+- `--css-selector <selector>`: CSS selector for fix suggestions
+- `--embed-metadata`: Embed metadata in output PNG
 
 **compare command:**
 
 - `-t, --threshold <threshold>`: Difference threshold percentage (default: "0.1")
 - `-c, --color <color>`: Highlight color for differences (default: "red")
+- `--exclusions <file>`: Path to exclusions JSON file
+- `--classify`: Enable smart classification
+- `--embed-metadata`: Embed metadata in output
+
+**batch command:**
+
+- `-p, --pattern <pattern>`: File pattern to match (default: "*.png")
+- `-r, --recursive`: Scan directories recursively
+- `-t, --threshold <threshold>`: Difference threshold percentage
+- `--parallel`: Enable parallel processing
+- `--concurrency <n>`: Number of parallel workers
+- `--smart-pairing`: Use fuzzy file matching
+- `--generate-summary`: Create HTML summary report
 
 ### Examples
 
@@ -318,14 +355,21 @@ npm run dev
 
 ## 📚 Documentation
 
+- [API Documentation](docs/API.md)
+- [Examples](examples/README.md)
 - [Detailed PRD](docs/initial-planning/imagediff-prd-detailed.md)
 - [Figma Website Refinement Guide](docs/initial-planning/figma-website-refinement-guide.md)
 - [Methodology](docs/initial-planning/methodology-vibes.md)
 
 ## 🚀 Roadmap
 
-- [ ] Add support for batch processing multiple image pairs
-- [ ] Implement smart exclusion regions (ignore timestamps, etc.)
+- [x] Add support for batch processing multiple image pairs ✅
+- [x] Implement smart exclusion regions (ignore timestamps, etc.) ✅
+- [x] Interactive before/after slider in reports ✅
+- [x] Smart classification of change types ✅
+- [x] CSS fix suggestions for style changes ✅
+- [x] Progressive refinement mode ✅
+- [x] PNG metadata embedding ✅
 - [ ] Add support for different image formats (WebP, AVIF)
 - [ ] Create web-based UI for visual comparisons
 - [ ] Add machine learning-based alignment for complex UIs

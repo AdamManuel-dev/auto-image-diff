@@ -19,10 +19,17 @@
     "prepare": "husky",
     "prettier:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "prettier:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
-    "format": "npm run prettier:fix && npm run lint:fix"
+    "format": "npm run prettier:fix && npm run lint:fix",
+    "example:basic": "ts-node examples/basic-comparison.ts",
+    "example:classification": "ts-node examples/smart-classification.ts",
+    "example:batch": "ts-node examples/batch-processing.ts",
+    "example:refine": "ts-node examples/progressive-refinement.ts",
+    "example:css-fixes": "ts-node examples/css-fix-suggestions.ts",
+    "example:metadata": "ts-node examples/metadata-tracking.ts",
+    "examples:all": "npm run example:basic && npm run example:classification && npm run example:batch && npm run example:css-fixes && npm run example:metadata"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "src/**/*.{ts,tsx}": [
       "eslint --fix",
       "prettier --write"
     ],
