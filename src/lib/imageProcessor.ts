@@ -8,8 +8,8 @@
  * Patterns: Async/await, error handling, TypeScript types
  */
 
-import * as gm from "gm";
-import * as fs from "fs/promises";
+import * as gm from 'gm';
+import * as fs from 'fs/promises';
 
 const imageMagick = gm.subClass({ imageMagick: true });
 
@@ -25,7 +25,7 @@ export interface ComparisonResult {
 }
 
 export interface AlignmentOptions {
-  method: "feature" | "phase" | "subimage";
+  method: 'feature' | 'phase' | 'subimage';
   threshold?: number;
 }
 
@@ -37,17 +37,17 @@ export class ImageProcessor {
     referenceImage: string,
     targetImage: string,
     outputPath: string,
-    _options: AlignmentOptions = { method: "subimage" },
+    _options: AlignmentOptions = { method: 'subimage' }
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       imageMagick(referenceImage).compare(
         targetImage,
         {
-          metric: "rmse",
+          metric: 'rmse',
           subimage_search: true,
         },
         (err: unknown, _isEqual: unknown, _equality: unknown, raw: unknown) => {
-          if (err && !(raw as string).includes("@ ")) {
+          if (err && !(raw as string).includes('@ ')) {
             reject(err);
             return;
           }
@@ -72,7 +72,7 @@ export class ImageProcessor {
               else resolve();
             });
           }
-        },
+        }
       );
     });
   }
@@ -83,19 +83,19 @@ export class ImageProcessor {
   async compareImages(
     image1Path: string,
     image2Path: string,
-    threshold: number = 0.1,
+    threshold: number = 0.1
   ): Promise<ComparisonResult> {
     return new Promise((resolve, reject) => {
       imageMagick(image1Path).compare(
         image2Path,
-        { metric: "AE" },
+        { metric: 'AE' },
         (err: unknown, _isEqual: unknown, equality: unknown, raw: unknown) => {
           if (err && !raw) {
             reject(err);
             return;
           }
 
-          const pixelsDifferent = parseInt((raw as string) || "0", 10);
+          const pixelsDifferent = parseInt((raw as string) || '0', 10);
 
           // Get image dimensions
           imageMagick(image1Path).size((sizeErr, size) => {
@@ -117,7 +117,7 @@ export class ImageProcessor {
               },
             });
           });
-        },
+        }
       );
     });
   }
@@ -129,9 +129,9 @@ export class ImageProcessor {
     image1Path: string,
     image2Path: string,
     outputPath: string,
-    options: { highlightColor?: string; lowlight?: boolean } = {},
+    options: { highlightColor?: string; lowlight?: boolean } = {}
   ): Promise<ComparisonResult> {
-    const { highlightColor = "red", lowlight = true } = options;
+    const { highlightColor = 'red', lowlight = true } = options;
 
     return new Promise((resolve, reject) => {
       const diffPath = outputPath;
@@ -144,12 +144,7 @@ export class ImageProcessor {
           lowlight,
         },
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        async (
-          err: unknown,
-          _isEqual: unknown,
-          _equality: unknown,
-          _raw: unknown,
-        ) => {
+        async (err: unknown, _isEqual: unknown, _equality: unknown, _raw: unknown) => {
           if (err && !(await this.fileExists(diffPath))) {
             reject(err);
             return;
@@ -160,7 +155,7 @@ export class ImageProcessor {
           result.diffImagePath = diffPath;
 
           resolve(result);
-        },
+        }
       );
     });
   }

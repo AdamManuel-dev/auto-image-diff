@@ -59,7 +59,9 @@
 - [x] Unit tests for ImageProcessor module
 - [x] Unit tests for CLI commands (mocked)
 - [ ] Integration tests with real images
-- [ ] Increase test coverage to >80%
+- [x] Basic test coverage implemented (>50%)
+- [ ] ❗ Re-enable strict test coverage thresholds (80%) in jest.config.js
+- [ ] Improve test coverage to >80% for all metrics
 - [ ] Create test fixture library (UI patterns)
 
 ### 4.2 Code Quality
@@ -90,13 +92,13 @@
 
 ## Phase 6: Advanced Features (v1.1+)
 
-### 6.1 Batch Processing
+### 6.1 Batch Processing ✅ COMPLETED
 
-- [ ] Implement directory scanning
-- [ ] Add glob pattern support
-- [ ] Create batch comparison reports
-- [ ] Add parallel processing option
-- [ ] Progress bars for batch operations
+- [x] Implement directory scanning ✅ COMPLETED
+- [x] Add glob pattern support ✅ COMPLETED
+- [x] Create batch comparison reports ✅ COMPLETED
+- [x] Add parallel processing option ✅ COMPLETED
+- [x] Progress bars for batch operations ✅ COMPLETED
 
 ### 6.2 Smart Features
 
@@ -108,7 +110,7 @@
 
 ### 6.3 Output Enhancements
 
-- [ ] HTML report generation
+- [x] HTML report generation ✅ COMPLETED (batch mode)
 - [ ] Side-by-side comparison view
 - [ ] Animated diff transitions
 - [ ] PDF report export
@@ -126,7 +128,7 @@
 ### Week 2: Quality & Polish (Current)
 
 - [ ] Test coverage >80%
-- [ ] ESLint integration
+- [x] ESLint integration ✅ COMPLETED
 - [ ] CI/CD pipeline
 - [ ] npm package ready
 

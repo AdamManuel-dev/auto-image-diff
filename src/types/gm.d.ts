@@ -8,7 +8,7 @@
  * Patterns: TypeScript declaration file
  */
 
-declare module "gm" {
+declare module 'gm' {
   interface CompareOptions {
     metric?: string;
     subimage_search?: boolean;
@@ -26,12 +26,7 @@ declare module "gm" {
     compare(
       targetImage: string,
       options: CompareOptions,
-      callback: (
-        err: unknown,
-        isEqual: unknown,
-        equality: unknown,
-        raw: unknown,
-      ) => void,
+      callback: (err: unknown, isEqual: unknown, equality: unknown, raw: unknown) => void
     ): void;
     geometry(geometry: string): State;
     write(outputPath: string, callback: (err: unknown) => void): void;

@@ -8,8 +8,8 @@
  * Patterns: Jest test suite
  */
 
-describe("auto-image-diff", () => {
-  it("should have a working test environment", () => {
+describe('auto-image-diff', () => {
+  it('should have a working test environment', () => {
     expect(true).toBe(true);
   });
 });
