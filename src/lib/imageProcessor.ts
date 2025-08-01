@@ -18,6 +18,7 @@ import { ExclusionsConfig } from "./exclusions";
 import { MaskGenerator } from "./mask-generator";
 import { ClassifierManager, ClassificationSummary } from "./classifiers/manager";
 import { getAllClassifiers } from "./classifiers";
+import { CssFixSuggester, FixSuggestion } from "./css-fix-suggester";
 
 const execAsync = promisify(exec);
 const imageMagick = gm.subClass({ imageMagick: true });
@@ -32,6 +33,7 @@ export interface ComparisonResult {
     percentageDifferent: number;
   };
   classification?: ClassificationSummary;
+  cssSuggestions?: FixSuggestion[];
 }
 
 export interface AlignmentOptions {
@@ -145,6 +147,8 @@ export class ImageProcessor {
       lowlight?: boolean;
       exclusions?: ExclusionsConfig;
       runClassification?: boolean;
+      suggestCssFixes?: boolean;
+      cssSelector?: string;
     } = {}
   ): Promise<ComparisonResult> {
     const { highlightColor = "red", exclusions } = options;
@@ -188,6 +192,18 @@ export class ImageProcessor {
             outputPath
           );
           result.classification = classification;
+
+          // Generate CSS suggestions if we have style or layout changes
+          if (options.suggestCssFixes) {
+            const suggester = new CssFixSuggester();
+            const classificationResults = classification.regions
+              .map((r) => r.classification)
+              .filter((c) => c !== null);
+
+            result.cssSuggestions = suggester.suggestFixes(classificationResults, {
+              selector: options.cssSelector,
+            });
+          }
         } catch (error) {
           // Classification errors shouldn't fail the diff generation
           console.warn("Classification failed:", error);

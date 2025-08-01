@@ -109,6 +109,8 @@ program
   .option("-s, --smart", "Run smart classification on differences")
   .option("--smart-diff", "Generate detailed smart diff report with classifications")
   .option("-f, --focus <types>", "Focus on specific change types (comma-separated: content,style,layout,size,structural)")
+  .option("--suggest-css", "Generate CSS fix suggestions for style and layout changes")
+  .option("--css-selector <selector>", "CSS selector to use in fix suggestions (default: element class/id)")
   .action(
     async (
       image1: string,
@@ -136,7 +138,9 @@ program
           highlightColor: options.color,
           lowlight: options.lowlight,
           exclusions,
-          runClassification: options.smart || options.smartDiff,
+          runClassification: options.smart || options.smartDiff || options.suggestCss,
+          suggestCssFixes: options.suggestCss,
+          cssSelector: options.cssSelector,
         });
 
         console.log(`✅ Diff image saved to: ${output}`);
@@ -197,6 +201,38 @@ program
           );
         }
 
+        // Output CSS suggestions if available
+        if (result.cssSuggestions && result.cssSuggestions.length > 0) {
+          console.log(`\n🎨 CSS Fix Suggestions:`);
+          const cssFixSuggester = new (await import("./lib/css-fix-suggester")).CssFixSuggester();
+          
+          // Group by priority
+          const byPriority = {
+            high: result.cssSuggestions.filter(s => s.priority === "high"),
+            medium: result.cssSuggestions.filter(s => s.priority === "medium"),
+            low: result.cssSuggestions.filter(s => s.priority === "low"),
+          };
+          
+          ["high", "medium", "low"].forEach(priority => {
+            const suggestions = byPriority[priority as keyof typeof byPriority];
+            if (suggestions.length > 0) {
+              console.log(`\n   ${priority.toUpperCase()} Priority:`);
+              suggestions.forEach(suggestion => {
+                console.log(`   - ${suggestion.description}`);
+                suggestion.fixes.forEach(fix => {
+                  console.log(`     • ${fix.property}: ${fix.newValue}`);
+                });
+              });
+            }
+          });
+          
+          // Save CSS suggestions to file
+          const cssPath = output.replace(/\.[^.]+$/, "-fixes.css");
+          const cssContent = cssFixSuggester.formatAsCss(result.cssSuggestions);
+          await fs.writeFile(cssPath, cssContent);
+          console.log(`\n💾 CSS suggestions saved to: ${cssPath}`);
+        }
+
         // Generate detailed smart diff report if requested
         if (options.smartDiff && result.classification) {
           const reportPath = output.replace(/\.[^.]+$/, "-smart-report.json");
@@ -251,6 +287,7 @@ program
               classifier: r.classifier,
               details: r.classification.details,
             })),
+            cssSuggestions: result.cssSuggestions,
           }, path.dirname(htmlReportPath));
           
           await fs.writeFile(htmlReportPath, htmlReport);
@@ -377,6 +414,7 @@ program
   .option("-r, --recursive", "Scan directories recursively", true)
   .option("-t, --threshold <threshold>", "Difference threshold percentage", "0.1")
   .option("--no-parallel", "Disable parallel processing")
+  .option("-c, --concurrency <workers>", "Number of parallel workers (default: 4)", "4")
   .option("-e, --exclude <regions>", "Path to exclusions.json file defining regions to ignore")
   .option("-s, --smart", "Run smart classification on differences")
   .option("--smart-pairing", "Use smart file pairing algorithm for fuzzy matching")
@@ -390,6 +428,7 @@ program
         recursive: boolean;
         threshold: string;
         parallel: boolean;
+        concurrency: string;
         exclude?: string;
         smart?: boolean;
         smartPairing?: boolean;
@@ -420,6 +459,7 @@ program
           outputDir,
           threshold: parseFloat(options.threshold),
           parallel: options.parallel,
+          maxConcurrency: parseInt(options.concurrency, 10),
           exclusions,
           runClassification: options.smart,
           smartPairing: options.smartPairing,

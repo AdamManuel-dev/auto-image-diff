@@ -11,6 +11,7 @@
 import { ComparisonResult } from "./imageProcessor";
 import { ClassificationSummary } from "./classifiers/manager";
 import { DifferenceType } from "./classifiers/base";
+import { FixSuggestion, CssFixSuggester } from "./css-fix-suggester";
 import * as path from "path";
 
 export interface SmartReportOptions {
@@ -38,6 +39,7 @@ export interface SmartReportData {
     classifier: string;
     details?: Record<string, unknown>;
   }>;
+  cssSuggestions?: FixSuggestion[];
 }
 
 export class SmartReportGenerator {
@@ -88,8 +90,15 @@ export class SmartReportGenerator {
         
         ${regions && regions.length > 0 ? this.generateRegionsSection(regions) : ""}
         
+        ${data.cssSuggestions && data.cssSuggestions.length > 0 ? this.generateCssSuggestionsSection(data.cssSuggestions) : ""}
+        
         ${this.generateRecommendationsSection(classification)}
     </div>
+    
+    <script>
+        // Pass regions data to JavaScript
+        window.regionsData = ${JSON.stringify(regions || [])};
+    </script>
     
     ${this.generateScripts()}
 </body>
@@ -314,6 +323,352 @@ export class SmartReportGenerator {
             color: var(--text-secondary);
         }
 
+        /* Before/After Slider Styles */
+        .slider-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .slider-wrapper {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            user-select: none;
+        }
+
+        .slider-image {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .slider-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: var(--bg-tertiary);
+        }
+
+        .slider-before {
+            left: 0;
+            z-index: 2;
+            clip-path: inset(0 50% 0 0);
+        }
+
+        .slider-after {
+            left: 0;
+            z-index: 1;
+        }
+
+        .slider-label {
+            position: absolute;
+            top: 20px;
+            padding: 5px 15px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .slider-before .slider-label {
+            left: 20px;
+        }
+
+        .slider-after .slider-label {
+            right: 20px;
+        }
+
+        .slider-handle {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 4px;
+            height: 100%;
+            background: var(--accent);
+            cursor: ew-resize;
+            z-index: 3;
+            transform: translateX(-50%);
+        }
+
+        .slider-handle::before,
+        .slider-handle::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .slider-handle::before {
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .handle-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+
+        .view-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .toggle-btn {
+            padding: 8px 20px;
+            border: 2px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .toggle-btn:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .toggle-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Region Highlighting Styles */
+        .region-overlays {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        .region-highlight {
+            position: absolute;
+            border: 2px solid;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .region-highlight:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+        }
+
+        .region-highlight.type-content {
+            border-color: #3498db;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+        }
+
+        .region-highlight.type-style {
+            border-color: #9b59b6;
+            box-shadow: 0 0 10px rgba(155, 89, 182, 0.5);
+        }
+
+        .region-highlight.type-layout {
+            border-color: #e74c3c;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+        }
+
+        .region-highlight.type-size {
+            border-color: #f39c12;
+            box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+        }
+
+        .region-highlight.type-structural {
+            border-color: #2ecc71;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+
+        .region-highlight.type-new_element {
+            border-color: #27ae60;
+            box-shadow: 0 0 10px rgba(39, 174, 96, 0.5);
+        }
+
+        .region-highlight.type-removed_element {
+            border-color: #e74c3c;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+        }
+
+        .region-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .region-tooltip.show {
+            opacity: 1;
+        }
+
+        .region-toggle-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .region-toggle {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+
+        .region-toggle input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        /* CSS Suggestions Styles */
+        .css-suggestions {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .suggestion-card {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            transition: transform 0.2s;
+        }
+
+        .suggestion-card:hover {
+            transform: translateX(5px);
+        }
+
+        .suggestion-card.high-priority {
+            border-left-color: var(--danger);
+        }
+
+        .suggestion-card.medium-priority {
+            border-left-color: var(--warning);
+        }
+
+        .suggestion-card.low-priority {
+            border-left-color: var(--success);
+        }
+
+        .suggestion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .suggestion-type {
+            font-size: 0.85rem;
+        }
+
+        .suggestion-priority {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .suggestion-description {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .suggestion-fixes {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .fix-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .fix-property {
+            background: var(--bg-tertiary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: var(--accent);
+        }
+
+        .fix-value {
+            flex: 1;
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+
+        .fix-confidence {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .css-output {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .css-output h3 {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .css-output pre {
+            margin: 0;
+            overflow-x: auto;
+        }
+
+        .css-output code {
+            background: none;
+            padding: 0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -325,6 +680,14 @@ export class SmartReportGenerator {
             
             h1 {
                 font-size: 2rem;
+            }
+
+            .slider-wrapper {
+                height: 400px;
+            }
+
+            .handle-icon {
+                font-size: 1rem;
             }
         }
     </style>`;
@@ -374,7 +737,45 @@ export class SmartReportGenerator {
     return `
         <section class="section">
             <h2>Visual Comparison</h2>
-            <div class="image-comparison">
+            
+            <!-- Before/After Slider -->
+            <div class="slider-container" id="imageSlider">
+                <div class="slider-wrapper">
+                    <div class="slider-image slider-before">
+                        <img src="${image1}" alt="Original Image" />
+                        <div class="slider-label">Before</div>
+                        <div class="region-overlays" id="regionsOverlayBefore"></div>
+                    </div>
+                    <div class="slider-image slider-after">
+                        <img src="${image2}" alt="Compared Image" />
+                        <div class="slider-label">After</div>
+                        <div class="region-overlays" id="regionsOverlayAfter"></div>
+                    </div>
+                    <div class="slider-handle" id="sliderHandle">
+                        <span class="handle-icon">⟷</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Region Toggle Controls -->
+            <div class="region-toggle-controls">
+                <label class="region-toggle">
+                    <input type="checkbox" id="toggleRegions" checked>
+                    <span>Show Regions</span>
+                </label>
+                <label class="region-toggle">
+                    <input type="checkbox" id="toggleTooltips" checked>
+                    <span>Show Tooltips</span>
+                </label>
+            </div>
+            
+            <!-- Traditional Grid View -->
+            <div class="view-toggle">
+                <button class="toggle-btn active" data-view="slider">Slider View</button>
+                <button class="toggle-btn" data-view="grid">Grid View</button>
+            </div>
+            
+            <div class="image-comparison" style="display: none;">
                 <div class="image-box">
                     <img src="${image1}" alt="Original Image" />
                     <div class="image-label">Original</div>
@@ -459,7 +860,7 @@ export class SmartReportGenerator {
                     ${regions
                       .map(
                         (region) => `
-                        <tr>
+                        <tr data-region-id="${region.id}">
                             <td>#${region.id}</td>
                             <td>(${region.bounds.x}, ${region.bounds.y})</td>
                             <td>${region.bounds.width} × ${region.bounds.height}</td>
@@ -473,6 +874,65 @@ export class SmartReportGenerator {
                 </tbody>
             </table>
         </section>`;
+  }
+
+  /**
+   * Generate CSS suggestions section
+   */
+  private generateCssSuggestionsSection(suggestions: FixSuggestion[]): string {
+    const suggester = new CssFixSuggester();
+    const cssCode = suggester.formatAsCss(suggestions);
+
+    return `
+        <section class="section">
+            <h2>CSS Fix Suggestions</h2>
+            
+            <div class="css-suggestions">
+                ${suggestions
+                  .map(
+                    (suggestion) => `
+                    <div class="suggestion-card ${suggestion.priority}-priority">
+                        <div class="suggestion-header">
+                            <span class="suggestion-type type-badge type-${suggestion.type}">${suggestion.type}</span>
+                            <span class="suggestion-priority">${suggestion.priority} priority</span>
+                        </div>
+                        <p class="suggestion-description">${suggestion.description}</p>
+                        <div class="suggestion-fixes">
+                            ${suggestion.fixes
+                              .map(
+                                (fix) => `
+                                <div class="fix-item">
+                                    <code class="fix-property">${fix.property}</code>
+                                    <span class="fix-value">${fix.newValue}</span>
+                                    <span class="fix-confidence">${Math.round(fix.confidence * 100)}%</span>
+                                </div>
+                            `
+                              )
+                              .join("")}
+                        </div>
+                    </div>
+                `
+                  )
+                  .join("")}
+            </div>
+            
+            <div class="css-output">
+                <h3>Generated CSS</h3>
+                <pre><code class="language-css">${this.escapeHtml(cssCode)}</code></pre>
+            </div>
+        </section>`;
+  }
+
+  /**
+   * Escape HTML for safe display
+   */
+  private escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   /**
@@ -538,7 +998,6 @@ export class SmartReportGenerator {
    */
   private generateScripts(): string {
     return `<script>
-        // Add interactivity here if needed
         document.addEventListener('DOMContentLoaded', function() {
             // Animate confidence meters
             const confidenceFills = document.querySelectorAll('.confidence-fill');
@@ -559,6 +1018,192 @@ export class SmartReportGenerator {
                 row.addEventListener('mouseleave', function() {
                     this.style.backgroundColor = '';
                 });
+            });
+
+            // Before/After Slider functionality
+            const sliderHandle = document.getElementById('sliderHandle');
+            const sliderContainer = document.getElementById('imageSlider');
+            const sliderBefore = document.querySelector('.slider-before');
+            
+            if (sliderHandle && sliderContainer && sliderBefore) {
+                let isDragging = false;
+                let startX = 0;
+                let startLeft = 0;
+                
+                function updateSliderPosition(clientX) {
+                    const rect = sliderContainer.getBoundingClientRect();
+                    const x = clientX - rect.left;
+                    const percent = (x / rect.width) * 100;
+                    const clampedPercent = Math.max(0, Math.min(100, percent));
+                    
+                    sliderHandle.style.left = clampedPercent + '%';
+                    sliderBefore.style.clipPath = 'inset(0 ' + (100 - clampedPercent) + '% 0 0)';
+                }
+                
+                // Mouse events
+                sliderHandle.addEventListener('mousedown', function(e) {
+                    isDragging = true;
+                    startX = e.clientX;
+                    const rect = sliderContainer.getBoundingClientRect();
+                    startLeft = (parseFloat(sliderHandle.style.left) || 50) * rect.width / 100;
+                    e.preventDefault();
+                });
+                
+                document.addEventListener('mousemove', function(e) {
+                    if (isDragging) {
+                        updateSliderPosition(e.clientX);
+                    }
+                });
+                
+                document.addEventListener('mouseup', function() {
+                    isDragging = false;
+                });
+                
+                // Touch events
+                sliderHandle.addEventListener('touchstart', function(e) {
+                    isDragging = true;
+                    const touch = e.touches[0];
+                    startX = touch.clientX;
+                    const rect = sliderContainer.getBoundingClientRect();
+                    startLeft = (parseFloat(sliderHandle.style.left) || 50) * rect.width / 100;
+                    e.preventDefault();
+                });
+                
+                document.addEventListener('touchmove', function(e) {
+                    if (isDragging) {
+                        const touch = e.touches[0];
+                        updateSliderPosition(touch.clientX);
+                    }
+                });
+                
+                document.addEventListener('touchend', function() {
+                    isDragging = false;
+                });
+                
+                // Click anywhere on the slider to jump to position
+                sliderContainer.addEventListener('click', function(e) {
+                    if (e.target !== sliderHandle && !sliderHandle.contains(e.target)) {
+                        updateSliderPosition(e.clientX);
+                    }
+                });
+            }
+            
+            // View toggle functionality
+            const toggleButtons = document.querySelectorAll('.toggle-btn');
+            const sliderView = document.querySelector('.slider-container');
+            const gridView = document.querySelector('.image-comparison');
+            
+            toggleButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    toggleButtons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const view = this.getAttribute('data-view');
+                    if (view === 'slider') {
+                        sliderView.style.display = 'block';
+                        gridView.style.display = 'none';
+                    } else {
+                        sliderView.style.display = 'none';
+                        gridView.style.display = 'grid';
+                    }
+                });
+            });
+
+            // Region highlighting functionality
+            function initializeRegions() {
+                const regionsOverlayBefore = document.getElementById('regionsOverlayBefore');
+                const regionsOverlayAfter = document.getElementById('regionsOverlayAfter');
+                const toggleRegions = document.getElementById('toggleRegions');
+                const toggleTooltips = document.getElementById('toggleTooltips');
+                const tooltip = document.createElement('div');
+                tooltip.className = 'region-tooltip';
+                document.body.appendChild(tooltip);
+                
+                if (!window.regionsData || window.regionsData.length === 0) return;
+                
+                // Create region highlights
+                window.regionsData.forEach(region => {
+                    // Create highlight for before image
+                    const highlightBefore = createRegionHighlight(region);
+                    regionsOverlayBefore.appendChild(highlightBefore);
+                    
+                    // Create highlight for after image
+                    const highlightAfter = createRegionHighlight(region);
+                    regionsOverlayAfter.appendChild(highlightAfter);
+                    
+                    // Add hover events
+                    [highlightBefore, highlightAfter].forEach(highlight => {
+                        highlight.addEventListener('mouseenter', function(e) {
+                            if (toggleTooltips.checked) {
+                                showTooltip(e, region);
+                            }
+                        });
+                        
+                        highlight.addEventListener('mouseleave', function() {
+                            tooltip.classList.remove('show');
+                        });
+                        
+                        highlight.addEventListener('click', function() {
+                            // Scroll to region in table
+                            const regionRow = document.querySelector('tr[data-region-id="' + region.id + '"]');
+                            if (regionRow) {
+                                regionRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                regionRow.style.backgroundColor = 'var(--accent)';
+                                setTimeout(() => {
+                                    regionRow.style.backgroundColor = '';
+                                }, 1000);
+                            }
+                        });
+                    });
+                });
+                
+                // Toggle regions visibility
+                toggleRegions.addEventListener('change', function() {
+                    const overlays = document.querySelectorAll('.region-overlays');
+                    overlays.forEach(overlay => {
+                        overlay.style.display = this.checked ? 'block' : 'none';
+                    });
+                });
+                
+                function createRegionHighlight(region) {
+                    const highlight = document.createElement('div');
+                    highlight.className = 'region-highlight type-' + region.type;
+                    highlight.style.left = region.bounds.x + 'px';
+                    highlight.style.top = region.bounds.y + 'px';
+                    highlight.style.width = region.bounds.width + 'px';
+                    highlight.style.height = region.bounds.height + 'px';
+                    highlight.setAttribute('data-region-id', region.id);
+                    return highlight;
+                }
+                
+                function showTooltip(e, region) {
+                    const rect = e.target.getBoundingClientRect();
+                    tooltip.textContent = 'Region #' + region.id + ' - ' + region.type + ' (' + Math.round(region.confidence * 100) + '%)';
+                    tooltip.style.left = rect.left + rect.width / 2 + 'px';
+                    tooltip.style.top = rect.top - 30 + 'px';
+                    tooltip.style.transform = 'translateX(-50%)';
+                    tooltip.classList.add('show');
+                }
+            }
+            
+            // Initialize regions after images load
+            const images = document.querySelectorAll('.slider-image img');
+            let loadedCount = 0;
+            
+            images.forEach(img => {
+                if (img.complete) {
+                    loadedCount++;
+                    if (loadedCount === images.length) {
+                        initializeRegions();
+                    }
+                } else {
+                    img.addEventListener('load', function() {
+                        loadedCount++;
+                        if (loadedCount === images.length) {
+                            initializeRegions();
+                        }
+                    });
+                }
             });
         });
     </script>`;

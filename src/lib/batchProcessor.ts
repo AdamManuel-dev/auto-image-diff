@@ -52,6 +52,63 @@ export class BatchProcessor {
   }
 
   /**
+   * Process items in parallel with concurrency control
+   */
+  private async processInParallel<T, R>(
+    items: T[],
+    concurrency: number,
+    processor: (item: T, index: number) => Promise<R>
+  ): Promise<Array<{ item: T; value?: R; error?: string; index: number }>> {
+    const results: Array<{ item: T; value?: R; error?: string; index: number }> = [];
+    const queue = [...items.map((item, index) => ({ item, index }))];
+    const inProgress = new Set<Promise<void>>();
+    let completed = 0;
+
+    async function processNext(): Promise<void> {
+      const next = queue.shift();
+      if (!next) return;
+
+      try {
+        const value = await processor(next.item, next.index);
+        results[next.index] = { item: next.item, value, index: next.index };
+      } catch (error) {
+        results[next.index] = {
+          item: next.item,
+          error: error instanceof Error ? error.message : String(error),
+          index: next.index,
+        };
+      }
+
+      completed++;
+      const progress = (completed / items.length) * 100;
+      process.stdout.write(
+        `\rProcessing: ${progress.toFixed(1)}% (${completed}/${items.length}) - ${concurrency} workers`
+      );
+    }
+
+    // Start initial batch
+    for (let i = 0; i < Math.min(concurrency, items.length); i++) {
+      const promise = processNext().then(() => {
+        inProgress.delete(promise);
+        if (queue.length > 0) {
+          const nextPromise = processNext().then(() => {
+            inProgress.delete(nextPromise);
+          });
+          inProgress.add(nextPromise);
+          return nextPromise;
+        }
+      });
+      inProgress.add(promise);
+    }
+
+    // Wait for all to complete
+    await Promise.all(Array.from(inProgress));
+    process.stdout.write("\r\n");
+
+    return results;
+  }
+
+  /**
    * Process a batch of images from directories
    */
   async processBatch(
@@ -87,61 +144,124 @@ export class BatchProcessor {
       ? this.smartMatchFilePairs(referenceDir, referenceFiles, targetDir, targetFiles)
       : this.matchFilePairs(referenceDir, referenceFiles, targetDir, targetFiles);
 
-    // Process each pair
-    for (const [index, pair] of pairs.entries()) {
-      try {
-        const outputSubDir = path.join(options.outputDir, path.dirname(pair.relativePath));
-        await fs.mkdir(outputSubDir, { recursive: true });
+    // Process pairs with parallel support
+    if (options.parallel !== false && options.maxConcurrency && options.maxConcurrency > 1) {
+      // Parallel processing
+      const concurrency = options.maxConcurrency || 4;
+      console.log(`🚀 Processing ${pairs.length} image pairs with ${concurrency} workers...`);
 
-        const baseName = path.basename(pair.relativePath, path.extname(pair.relativePath));
-        const alignedPath = path.join(outputSubDir, `${baseName}_aligned.png`);
-        const diffPath = path.join(outputSubDir, `${baseName}_diff.png`);
+      // Process in chunks
+      const processedResults = await this.processInParallel(
+        pairs,
+        concurrency,
+        async (pair, _index) => {
+          const outputSubDir = path.join(options.outputDir, path.dirname(pair.relativePath));
+          await fs.mkdir(outputSubDir, { recursive: true });
 
-        // Align images
-        await this.imageProcessor.alignImages(pair.reference, pair.target, alignedPath);
+          const baseName = path.basename(pair.relativePath, path.extname(pair.relativePath));
+          const alignedPath = path.join(outputSubDir, `${baseName}_aligned.png`);
+          const diffPath = path.join(outputSubDir, `${baseName}_diff.png`);
 
-        // Generate diff
-        const comparisonResult = await this.imageProcessor.generateDiff(
-          pair.reference,
-          alignedPath,
-          diffPath,
-          {
-            highlightColor: "red",
-            lowlight: true,
-            exclusions: options.exclusions,
-            runClassification: options.runClassification,
-          }
-        );
+          // Align images
+          await this.imageProcessor.alignImages(pair.reference, pair.target, alignedPath);
 
-        results.results.push({
-          reference: pair.reference,
-          target: pair.target,
-          result: comparisonResult,
-        });
+          // Generate diff
+          const comparisonResult = await this.imageProcessor.generateDiff(
+            pair.reference,
+            alignedPath,
+            diffPath,
+            {
+              highlightColor: "red",
+              lowlight: true,
+              exclusions: options.exclusions,
+              runClassification: options.runClassification,
+            }
+          );
 
-        // Update summary
-        results.processed++;
-        results.summary.totalPixelsDifferent += comparisonResult.statistics.pixelsDifferent;
-        if (comparisonResult.isEqual) {
-          results.summary.matchingImages++;
-        } else {
-          results.summary.differentImages++;
+          return {
+            reference: pair.reference,
+            target: pair.target,
+            result: comparisonResult,
+          };
         }
+      );
 
-        // Progress callback
-        if (options.parallel === false) {
+      // Aggregate results
+      for (const result of processedResults) {
+        if (result.error) {
+          results.failed++;
+          results.results.push({
+            reference: result.item.reference,
+            target: result.item.target,
+            error: result.error,
+          });
+        } else if (result.value) {
+          results.results.push(result.value);
+          results.processed++;
+          results.summary.totalPixelsDifferent +=
+            result.value.result?.statistics.pixelsDifferent || 0;
+          if (result.value.result?.isEqual) {
+            results.summary.matchingImages++;
+          } else {
+            results.summary.differentImages++;
+          }
+        }
+      }
+    } else {
+      // Sequential processing (original code)
+      for (const [index, pair] of pairs.entries()) {
+        try {
+          const outputSubDir = path.join(options.outputDir, path.dirname(pair.relativePath));
+          await fs.mkdir(outputSubDir, { recursive: true });
+
+          const baseName = path.basename(pair.relativePath, path.extname(pair.relativePath));
+          const alignedPath = path.join(outputSubDir, `${baseName}_aligned.png`);
+          const diffPath = path.join(outputSubDir, `${baseName}_diff.png`);
+
+          // Align images
+          await this.imageProcessor.alignImages(pair.reference, pair.target, alignedPath);
+
+          // Generate diff
+          const comparisonResult = await this.imageProcessor.generateDiff(
+            pair.reference,
+            alignedPath,
+            diffPath,
+            {
+              highlightColor: "red",
+              lowlight: true,
+              exclusions: options.exclusions,
+              runClassification: options.runClassification,
+            }
+          );
+
+          results.results.push({
+            reference: pair.reference,
+            target: pair.target,
+            result: comparisonResult,
+          });
+
+          // Update summary
+          results.processed++;
+          results.summary.totalPixelsDifferent += comparisonResult.statistics.pixelsDifferent;
+          if (comparisonResult.isEqual) {
+            results.summary.matchingImages++;
+          } else {
+            results.summary.differentImages++;
+          }
+
+          // Progress callback
           const progress = ((index + 1) / pairs.length) * 100;
           process.stdout.write(
             `\rProcessing: ${progress.toFixed(1)}% (${index + 1}/${pairs.length})`
           );
+        } catch (error) {
+          results.failed++;
+          results.results.push({
+            reference: pair.reference,
+            target: pair.target,
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
-      } catch (error) {
-        results.failed++;
-        results.results.push({
-          reference: pair.reference,
-          target: pair.target,
-          error: error instanceof Error ? error.message : String(error),
-        });
       }
     }
 
