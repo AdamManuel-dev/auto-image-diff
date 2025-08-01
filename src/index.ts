@@ -1,13 +1,13 @@
 /**
  * @fileoverview Main entry point for auto-image-diff
- * @lastmodified 2025-08-01T03:35:00Z
+ * @lastmodified 2025-08-01T03:57:00Z
  *
- * Features: Image comparison, diff generation, automated testing
- * Main APIs: (to be implemented)
- * Constraints: Requires Node.js 22+
- * Patterns: TypeScript, ES modules
+ * Features: Image alignment, comparison, diff generation using ImageMagick
+ * Main APIs: ImageProcessor, alignImages, compareImages, generateDiff
+ * Constraints: Requires Node.js 22+, ImageMagick installed
+ * Patterns: TypeScript, CommonJS modules, async/await
  */
 
-console.log("Auto Image Diff - Starting...");
+export { ImageProcessor, ComparisonResult, AlignmentOptions } from './lib/imageProcessor';
 
-export {};
+// CLI is handled separately in cli.ts
