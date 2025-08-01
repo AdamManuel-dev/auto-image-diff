@@ -1,4 +1,4 @@
-# auto-image-diff
+# Automated UI Screenshot Alignment and Comparison Tool
 
 <div align="center">
   
@@ -8,7 +8,7 @@
   [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
   [![Node](https://img.shields.io/badge/node-14+-green.svg)](https://nodejs.org/)
   
-  **Automated UI Screenshot Alignment and Comparison Tool**
+  **auto-image-diff**
   
   [Installation](#installation) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Examples](#examples) • [Contributing](#contributing)
 
@@ -28,7 +28,7 @@ auto-image-diff is a powerful command-line tool that automatically aligns UI scr
 - 📊 **Multiple Output Formats** - PNG, HTML, and JSON reports
 - 🔧 **CI/CD Ready** - Designed for seamless integration into automated workflows
 - 🎯 **Smart Difference Detection** - Distinguishes between anti-aliasing and actual changes
-
+<!-- 
 ## 📸 Visual Example
 
 <table>
@@ -37,7 +37,7 @@ auto-image-diff is a powerful command-line tool that automatically aligns UI scr
 <td align="center"><b>After</b><br><img src="docs/images/after.png" width="250"/></td>
 <td align="center"><b>Difference</b><br><img src="docs/images/diff.png" width="250"/></td>
 </tr>
-</table>
+</table> -->
 
 ## 🚀 Quick Start
 
@@ -53,7 +53,7 @@ auto-image-diff before.png after.png -o diff.png --pm-threshold 0.2
 # Generate HTML report
 auto-image-diff before.png after.png -o report.html --format html
 ```
-
+<!-- 
 ### Batch Processing
 
 ```bash
@@ -62,11 +62,11 @@ auto-image-diff --batch \
   --before-dir ./baseline \
   --after-dir ./current \
   --output-dir ./results
-```
+``` -->
 
 ## 📦 Installation
-
-### Option 1: Using Package Managers (Recommended)
+<!-- 
+### Option 1: Using Package Managers (Recommended) (NOT IMPLEMENTED YET)
 
 ```bash
 # Install via pip and npm
@@ -78,7 +78,7 @@ pip install auto-image-diff
 auto-image-diff --version
 ```
 
-### Option 2: Pre-built Binaries
+### Option 2: Pre-built Binaries (NOT IMPLEMENTED YET)
 
 Download the latest release for your platform:
 
@@ -96,7 +96,7 @@ sudo mv auto-image-diff-* /usr/local/bin/auto-image-diff
 # Add to PATH or use directly
 ```
 
-### Option 3: Docker
+### Option 3: Docker (NOT IMPLEMENTED YET)
 
 ```bash
 # Pull the image
@@ -107,9 +107,11 @@ alias auto-image-diff='docker run -v $(pwd):/work auto-image-diff/auto-image-dif
 
 # Use normally
 auto-image-diff image1.png image2.png -o diff.png
-```
+``` -->
 
-### Option 4: From Source
+<!-- ### Option 4: From Source -->
+
+### From Source
 
 ```bash
 # Clone repository
@@ -186,10 +188,10 @@ output:
   formats: [png, json]
   include_metadata: true
 ```
-
+<!-- 
 ## 🔧 CI/CD Integration
 
-### GitHub Actions
+### GitHub Actions (NOT IMPLEMENTED YET)
 
 ```yaml
 name: Visual Regression Tests
@@ -224,7 +226,7 @@ jobs:
           path: ./tests/diff/
 ```
 
-### Jenkins
+### Jenkins (NOT IMPLEMENTED YET)
 
 ```groovy
 pipeline {
@@ -254,7 +256,7 @@ pipeline {
 }
 ```
 
-### GitLab CI
+### GitLab CI (NOT IMPLEMENTED YET)
 
 ```yaml
 visual-regression:
@@ -268,7 +270,7 @@ visual-regression:
     paths:
       - diff/
     expire_in: 1 week
-```
+``` -->
 
 ## 📚 Examples
 
@@ -406,7 +408,7 @@ pytest
 # With coverage
 pytest --cov=auto-image-diff --cov-report=html
 ```
-
+<!-- 
 ## 📊 Performance
 
 Benchmarked on Ubuntu 20.04, Intel i7-9700K, 16GB RAM:
@@ -415,7 +417,7 @@ Benchmarked on Ubuntu 20.04, Intel i7-9700K, 16GB RAM:
 |------------|----------------|--------------|
 | 1920×1080  | ~1.5 seconds   | ~250 MB      |
 | 3840×2160  | ~4.7 seconds   | ~980 MB      |
-| 1280×720   | ~1.0 seconds   | ~150 MB      |
+| 1280×720   | ~1.0 seconds   | ~150 MB      | -->
 
 ## 🔍 Troubleshooting
 
@@ -469,24 +471,24 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📬 Support
 
-- 📧 Email: support@auto-image-diff.io
-- 💬 Discord: [Join our community](https://discord.gg/auto-image-diff)
+- 📧 Email: adam@manuel.dev
+<!-- - 💬 Discord: [Join our community](https://discord.gg/auto-image-diff)
 - 🐛 Issues: [GitHub Issues](https://github.com/yourusername/auto-image-diff/issues)
-- 📖 Wiki: [Documentation Wiki](https://github.com/yourusername/auto-image-diff/wiki)
+- 📖 Wiki: [Documentation Wiki](https://github.com/yourusername/auto-image-diff/wiki) -->
 
-## 🗺️ Roadmap
+<!-- ## 🗺️ Roadmap
 
-See our [public roadmap](https://github.com/yourusername/auto-image-diff/projects/1) for upcoming features:
+See our [public roadmap](https://github.com/adammanuel-dev/auto-image-diff/projects/1) for upcoming features:
 
 - [ ] v1.1 - Plugin architecture for custom algorithms
 - [ ] v1.2 - Web service API
 - [ ] v2.0 - GUI application
-- [ ] v2.1 - Cloud processing support
+- [ ] v2.1 - Cloud processing support -->
 
 ---
 
 <div align="center">
-  Made with ❤️ by the auto-image-diff Team
+  Made with ❤️ by the Adam Manuel
   
-  ⭐ Star us on GitHub — it helps!
+  ⭐ Star this on GitHub — it helps!
 </div>
