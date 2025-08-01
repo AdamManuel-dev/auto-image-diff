@@ -8,20 +8,20 @@
  * Patterns: Jest, async tests, filesystem mocking
  */
 
-import { BatchProcessor } from '../batchProcessor';
-import * as fs from 'fs/promises';
-import { Dirent } from 'fs';
+import { BatchProcessor } from "../batchProcessor";
+import * as fs from "fs/promises";
+import { Dirent } from "fs";
 
 // Mock fs/promises
-jest.mock('fs/promises');
+jest.mock("fs/promises");
 
 // Mock ImageProcessor
-jest.mock('../imageProcessor', () => ({
+jest.mock("../imageProcessor", () => ({
   ImageProcessor: jest.fn().mockImplementation(() => ({
     alignImages: jest.fn().mockResolvedValue(undefined),
     generateDiff: jest.fn().mockResolvedValue({
       difference: 0.05,
-      diffImagePath: '/output/test_diff.png',
+      diffImagePath: "/output/test_diff.png",
       isEqual: false,
       statistics: {
         pixelsDifferent: 500,
@@ -32,7 +32,7 @@ jest.mock('../imageProcessor', () => ({
   })),
 }));
 
-describe('BatchProcessor', () => {
+describe("BatchProcessor", () => {
   let processor: BatchProcessor;
   const mockFs = fs as jest.Mocked<typeof fs>;
 
@@ -61,29 +61,29 @@ describe('BatchProcessor', () => {
       const dirPath = dir.toString();
 
       if (options?.withFileTypes) {
-        if (dirPath.includes('reference')) {
-          return [createDirent('image1.png', false), createDirent('image2.png', false)] as any; // Using any to bypass strict type checking in tests
-        } else if (dirPath.includes('target')) {
-          return [createDirent('image1.png', false), createDirent('image2.png', false)] as any;
+        if (dirPath.includes("reference")) {
+          return [createDirent("image1.png", false), createDirent("image2.png", false)] as any; // Using any to bypass strict type checking in tests
+        } else if (dirPath.includes("target")) {
+          return [createDirent("image1.png", false), createDirent("image2.png", false)] as any;
         }
         return [] as any;
       }
 
       // Return string array if not withFileTypes
-      if (dirPath.includes('reference')) {
-        return ['image1.png', 'image2.png'];
-      } else if (dirPath.includes('target')) {
-        return ['image1.png', 'image2.png'];
+      if (dirPath.includes("reference")) {
+        return ["image1.png", "image2.png"];
+      } else if (dirPath.includes("target")) {
+        return ["image1.png", "image2.png"];
       }
       return [];
     });
   });
 
-  describe('processBatch', () => {
-    it('should process multiple images in batch', async () => {
-      const result = await processor.processBatch('/test/reference', '/test/target', {
-        outputDir: '/test/output',
-        pattern: '*.png',
+  describe("processBatch", () => {
+    it("should process multiple images in batch", async () => {
+      const result = await processor.processBatch("/test/reference", "/test/target", {
+        outputDir: "/test/output",
+        pattern: "*.png",
         recursive: false,
       });
 
@@ -94,29 +94,46 @@ describe('BatchProcessor', () => {
       expect(result.summary.differentImages).toBe(2);
     });
 
-    it('should generate HTML and JSON reports', async () => {
-      await processor.processBatch('/test/reference', '/test/target', {
-        outputDir: '/test/output',
-        pattern: '*.png',
+    it("should generate HTML and JSON reports", async () => {
+      await processor.processBatch("/test/reference", "/test/target", {
+        outputDir: "/test/output",
+        pattern: "*.png",
         recursive: false,
       });
 
       // Check that reports were written
       expect(mockFs.writeFile).toHaveBeenCalledWith(
-        '/test/output/batch-report.json',
+        "/test/output/batch-report.json",
         expect.any(String),
-        'utf-8'
+        "utf-8"
       );
       expect(mockFs.writeFile).toHaveBeenCalledWith(
-        '/test/output/index.html',
+        "/test/output/index.html",
         expect.any(String),
-        'utf-8'
+        "utf-8"
       );
     });
 
-    it.skip('should handle errors gracefully', async () => {
-      // Skip this test due to complex mocking requirements
-      // In a real scenario, this would be tested with integration tests
+    it("should handle errors gracefully", async () => {
+      // Mock alignment to fail
+      const imageProcessorModule = jest.requireMock("../imageProcessor");
+      const { ImageProcessor } = imageProcessorModule;
+      ImageProcessor.mockImplementation(() => {
+        return {
+          alignImages: jest.fn().mockRejectedValue(new Error("Alignment failed")),
+          compareImages: jest.fn(),
+          generateDiff: jest.fn(),
+        } as any;
+      });
+
+      const processor = new BatchProcessor();
+      const result = await processor.processBatch("/test/reference", "/test/target", {
+        outputDir: "/test/output",
+      });
+
+      expect(result.failed).toBe(2);
+      expect(result.processed).toBe(0);
+      expect(result.results[0].error).toBe("Alignment failed");
     });
   });
 });

@@ -1,10 +1,15 @@
 # auto-image-diff
 
+[![CI](https://github.com/AdamManuel-dev/auto-image-diff/actions/workflows/ci.yml/badge.svg)](https://github.com/AdamManuel-dev/auto-image-diff/actions/workflows/ci.yml)
+[![npm version](https://badge.fury.io/js/auto-image-diff.svg)](https://badge.fury.io/js/auto-image-diff)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 auto-image-diff is a powerful command-line tool that automatically aligns UI screenshots and generates visual difference reports. It solves the common problem of false positives in visual regression testing caused by minor positioning differences between screenshots.
 
 ## 🎯 Problem It Solves
 
 When running visual regression tests, even tiny positioning differences (1-2 pixels) between screenshots can cause tests to fail, even though the UI looks identical to the human eye. This leads to:
+
 - ❌ False positive test failures
 - 🔄 Constant test maintenance
 - 😤 Developer frustration
@@ -13,6 +18,7 @@ When running visual regression tests, even tiny positioning differences (1-2 pix
 ## ✨ Solution
 
 auto-image-diff uses ImageMagick's powerful image processing capabilities to:
+
 1. **Automatically detect and align** UI elements between screenshots
 2. **Generate accurate visual diffs** that ignore minor positioning differences
 3. **Produce clean reports** showing only meaningful visual changes
@@ -34,11 +40,13 @@ auto-image-diff uses ImageMagick's powerful image processing capabilities to:
 auto-image-diff requires ImageMagick to be installed on your system:
 
 **macOS:**
+
 ```bash
 brew install imagemagick
 ```
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt-get install imagemagick
 ```
@@ -70,13 +78,16 @@ auto-image-diff diff image1.png image2.png diff.png
 ### Options
 
 **align command:**
+
 - `-m, --method <method>`: Alignment method (feature|phase|subimage) (default: "subimage")
 
 **diff command:**
+
 - `-c, --color <color>`: Highlight color for differences (default: "red")
 - `--no-lowlight`: Disable lowlighting of unchanged areas
 
 **compare command:**
+
 - `-t, --threshold <threshold>`: Difference threshold percentage (default: "0.1")
 - `-c, --color <color>`: Highlight color for differences (default: "red")
 
@@ -99,11 +110,13 @@ auto-image-diff align reference.png test.png aligned.png -m phase
 ### Output
 
 The `compare` command creates a directory with:
+
 - `aligned.png` - The aligned version of the target image
 - `diff.png` - Visual diff highlighting the changes
 - `report.json` - Detailed comparison statistics
 
 Example `report.json`:
+
 ```json
 {
   "reference": "before.png",
@@ -126,21 +139,17 @@ Example `report.json`:
 ### Node.js API
 
 ```javascript
-const { ImageProcessor } = require('auto-image-diff');
+const { ImageProcessor } = require("auto-image-diff");
 
 const processor = new ImageProcessor();
 
 // Align images
-await processor.alignImages(
-  'reference.png',
-  'target.png',
-  'aligned.png'
-);
+await processor.alignImages("reference.png", "target.png", "aligned.png");
 
 // Compare images
 const result = await processor.compareImages(
-  'image1.png',
-  'image2.png',
+  "image1.png",
+  "image2.png",
   0.1 // threshold percentage
 );
 
@@ -156,34 +165,28 @@ console.log(result);
 // }
 
 // Generate visual diff
-const diffResult = await processor.generateDiff(
-  'image1.png',
-  'image2.png',
-  'diff.png',
-  { highlightColor: 'red', lowlight: true }
-);
+const diffResult = await processor.generateDiff("image1.png", "image2.png", "diff.png", {
+  highlightColor: "red",
+  lowlight: true,
+});
 ```
 
 ### TypeScript API
 
 ```typescript
-import { ImageProcessor, ComparisonResult, AlignmentOptions } from 'auto-image-diff';
+import { ImageProcessor, ComparisonResult, AlignmentOptions } from "auto-image-diff";
 
 const processor = new ImageProcessor();
 
 // Typed alignment options
 const alignOptions: AlignmentOptions = {
-  method: 'subimage'
+  method: "subimage",
 };
 
-await processor.alignImages('ref.png', 'target.png', 'out.png', alignOptions);
+await processor.alignImages("ref.png", "target.png", "out.png", alignOptions);
 
 // Typed comparison result
-const result: ComparisonResult = await processor.compareImages(
-  'image1.png',
-  'image2.png',
-  0.1
-);
+const result: ComparisonResult = await processor.compareImages("image1.png", "image2.png", 0.1);
 
 if (!result.isEqual) {
   console.log(`Images differ by ${result.statistics.percentageDifferent}%`);
@@ -203,13 +206,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Install ImageMagick
         run: sudo apt-get install -y imagemagick
-        
+
       - name: Install auto-image-diff
         run: npm install -g auto-image-diff
-        
+
       - name: Run Visual Regression Tests
         run: |
           auto-image-diff compare \
@@ -217,7 +220,7 @@ jobs:
             tests/screenshot.png \
             tests/results/ \
             --threshold 0.5
-            
+
       - name: Upload Diff Results
         if: failure()
         uses: actions/upload-artifact@v3
@@ -236,7 +239,7 @@ pipeline {
             steps {
                 sh 'npm install -g auto-image-diff'
                 sh 'auto-image-diff compare baseline.png current.png results/'
-                
+
                 publishHTML([
                     allowMissing: false,
                     alwaysLinkToLastBuild: true,

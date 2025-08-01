@@ -8,7 +8,7 @@
  * Patterns: TypeScript declaration file
  */
 
-declare module 'gm' {
+declare module "gm" {
   interface CompareOptions {
     metric?: string;
     subimage_search?: boolean;

@@ -16,7 +16,10 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prettier:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "prettier:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format": "npm run prettier:fix && npm run lint:fix"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

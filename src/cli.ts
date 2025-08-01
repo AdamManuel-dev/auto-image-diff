@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console */
 /**
  * @fileoverview CLI interface for auto-image-diff
  * @lastmodified 2025-08-01T03:56:00Z
@@ -21,9 +22,7 @@ const batchProcessor = new BatchProcessor();
 
 program
   .name("auto-image-diff")
-  .description(
-    "Automatically align UI screenshots and generate visual difference reports",
-  )
+  .description("Automatically align UI screenshots and generate visual difference reports")
   .version("0.1.0");
 
 program
@@ -32,17 +31,13 @@ program
   .argument("<reference>", "Reference image path")
   .argument("<target>", "Target image path to align")
   .argument("<output>", "Output path for aligned image")
-  .option(
-    "-m, --method <method>",
-    "Alignment method (feature|phase|subimage)",
-    "subimage",
-  )
+  .option("-m, --method <method>", "Alignment method (feature|phase|subimage)", "subimage")
   .action(
     async (
       reference: string,
       target: string,
       output: string,
-      options: { method: "feature" | "phase" | "subimage" },
+      options: { method: "feature" | "phase" | "subimage" }
     ) => {
       try {
         console.log("Aligning images...");
@@ -53,11 +48,11 @@ program
       } catch (error) {
         console.error(
           "❌ Error aligning images:",
-          error instanceof Error ? error.message : String(error),
+          error instanceof Error ? error.message : String(error)
         );
         process.exit(1);
       }
-    },
+    }
   );
 
 program
@@ -73,40 +68,31 @@ program
       image1: string,
       image2: string,
       output: string,
-      options: { color: string; lowlight: boolean },
+      options: { color: string; lowlight: boolean }
     ) => {
       try {
         console.log("Generating visual diff...");
-        const result = await imageProcessor.generateDiff(
-          image1,
-          image2,
-          output,
-          {
-            highlightColor: options.color,
-            lowlight: options.lowlight,
-          },
-        );
+        const result = await imageProcessor.generateDiff(image1, image2, output, {
+          highlightColor: options.color,
+          lowlight: options.lowlight,
+        });
 
         console.log(`✅ Diff image saved to: ${output}`);
         console.log(`📊 Statistics:`);
-        console.log(
-          `   - Pixels different: ${result.statistics.pixelsDifferent}`,
-        );
+        console.log(`   - Pixels different: ${result.statistics.pixelsDifferent}`);
         console.log(`   - Total pixels: ${result.statistics.totalPixels}`);
         console.log(
-          `   - Percentage different: ${result.statistics.percentageDifferent.toFixed(2)}%`,
+          `   - Percentage different: ${result.statistics.percentageDifferent.toFixed(2)}%`
         );
-        console.log(
-          `   - Images are ${result.isEqual ? "equal" : "different"}`,
-        );
+        console.log(`   - Images are ${result.isEqual ? "equal" : "different"}`);
       } catch (error) {
         console.error(
           "❌ Error generating diff:",
-          error instanceof Error ? error.message : String(error),
+          error instanceof Error ? error.message : String(error)
         );
         process.exit(1);
       }
-    },
+    }
   );
 
 program
@@ -115,18 +101,14 @@ program
   .argument("<reference>", "Reference image path")
   .argument("<target>", "Target image path")
   .argument("<output-dir>", "Output directory for results")
-  .option(
-    "-t, --threshold <threshold>",
-    "Difference threshold percentage",
-    "0.1",
-  )
+  .option("-t, --threshold <threshold>", "Difference threshold percentage", "0.1")
   .option("-c, --color <color>", "Highlight color for differences", "red")
   .action(
     async (
       reference: string,
       target: string,
       outputDir: string,
-      options: { threshold: string; color: string },
+      options: { threshold: string; color: string }
     ) => {
       try {
         // Ensure output directory exists
@@ -142,14 +124,9 @@ program
 
         // Step 2: Generate diff
         console.log("Step 2/2: Generating diff...");
-        const result = await imageProcessor.generateDiff(
-          reference,
-          alignedPath,
-          diffPath,
-          {
-            highlightColor: options.color,
-          },
-        );
+        const result = await imageProcessor.generateDiff(reference, alignedPath, diffPath, {
+          highlightColor: options.color,
+        });
 
         // Save comparison report
         const reportPath = path.join(outputDir, "report.json");
@@ -167,27 +144,25 @@ program
               timestamp: new Date().toISOString(),
             },
             null,
-            2,
-          ),
+            2
+          )
         );
 
         console.log(`✅ Comparison complete!`);
         console.log(`📁 Results saved to: ${outputDir}`);
         console.log(`📊 Summary:`);
         console.log(
-          `   - Percentage different: ${result.statistics.percentageDifferent.toFixed(2)}%`,
+          `   - Percentage different: ${result.statistics.percentageDifferent.toFixed(2)}%`
         );
-        console.log(
-          `   - Result: Images are ${result.isEqual ? "equal" : "different"}`,
-        );
+        console.log(`   - Result: Images are ${result.isEqual ? "equal" : "different"}`);
       } catch (error) {
         console.error(
           "❌ Error in comparison:",
-          error instanceof Error ? error.message : String(error),
+          error instanceof Error ? error.message : String(error)
         );
         process.exit(1);
       }
-    },
+    }
   );
 
 program
@@ -198,11 +173,7 @@ program
   .argument("<output-dir>", "Output directory for results")
   .option("-p, --pattern <pattern>", "File pattern to match", "*.png")
   .option("-r, --recursive", "Scan directories recursively", true)
-  .option(
-    "-t, --threshold <threshold>",
-    "Difference threshold percentage",
-    "0.1",
-  )
+  .option("-t, --threshold <threshold>", "Difference threshold percentage", "0.1")
   .option("--no-parallel", "Disable parallel processing")
   .action(
     async (
@@ -214,7 +185,7 @@ program
         recursive: boolean;
         threshold: string;
         parallel: boolean;
-      },
+      }
     ) => {
       try {
         console.log("Starting batch processing...");
@@ -222,17 +193,13 @@ program
         console.log(`Target directory: ${targetDir}`);
         console.log(`Output directory: ${outputDir}`);
 
-        const result = await batchProcessor.processBatch(
-          referenceDir,
-          targetDir,
-          {
-            pattern: options.pattern,
-            recursive: options.recursive,
-            outputDir,
-            threshold: parseFloat(options.threshold),
-            parallel: options.parallel,
-          },
-        );
+        const result = await batchProcessor.processBatch(referenceDir, targetDir, {
+          pattern: options.pattern,
+          recursive: options.recursive,
+          outputDir,
+          threshold: parseFloat(options.threshold),
+          parallel: options.parallel,
+        });
 
         console.log("\n✅ Batch processing complete!");
         console.log(`📊 Summary:`);
@@ -241,22 +208,18 @@ program
         console.log(`   - Failed: ${result.failed}`);
         console.log(`   - Matching images: ${result.summary.matchingImages}`);
         console.log(`   - Different images: ${result.summary.differentImages}`);
-        console.log(
-          `   - Average difference: ${result.summary.averageDifference.toFixed(4)}`,
-        );
+        console.log(`   - Average difference: ${result.summary.averageDifference.toFixed(4)}`);
         console.log(`\n📁 Results saved to: ${outputDir}`);
         console.log(`   - HTML report: ${path.join(outputDir, "index.html")}`);
-        console.log(
-          `   - JSON report: ${path.join(outputDir, "batch-report.json")}`,
-        );
+        console.log(`   - JSON report: ${path.join(outputDir, "batch-report.json")}`);
       } catch (error) {
         console.error(
           "❌ Error in batch processing:",
-          error instanceof Error ? error.message : String(error),
+          error instanceof Error ? error.message : String(error)
         );
         process.exit(1);
       }
-    },
+    }
   );
 
 program.parse();

@@ -8,9 +8,9 @@
  * Patterns: Async iterators for memory efficiency
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { ImageProcessor, ComparisonResult } from './imageProcessor';
+import * as fs from "fs/promises";
+import * as path from "path";
+import { ImageProcessor, ComparisonResult } from "./imageProcessor";
 
 export interface BatchOptions {
   pattern?: string;
@@ -98,7 +98,7 @@ export class BatchProcessor {
           pair.reference,
           alignedPath,
           diffPath,
-          { highlightColor: 'red', lowlight: true }
+          { highlightColor: "red", lowlight: true }
         );
 
         results.results.push({
@@ -143,7 +143,7 @@ export class BatchProcessor {
 
     // Clear progress line
     if (options.parallel === false) {
-      process.stdout.write('\r\n');
+      process.stdout.write("\r\n");
     }
 
     // Generate batch report
@@ -157,10 +157,10 @@ export class BatchProcessor {
    */
   private async scanDirectory(
     dir: string,
-    pattern: string = '*.png',
+    pattern: string = "*.png",
     recursive: boolean = true
   ): Promise<string[]> {
-    const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp'];
+    const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".bmp"];
     const files: string[] = [];
 
     async function scan(currentDir: string): Promise<void> {
@@ -176,7 +176,7 @@ export class BatchProcessor {
           imageExtensions.includes(path.extname(entry.name).toLowerCase())
         ) {
           // Simple pattern matching (could be enhanced with glob library)
-          if (pattern === '*.png' || pattern === '*') {
+          if (pattern === "*.png" || pattern === "*") {
             files.push(fullPath);
           } else if (pattern.includes(path.extname(entry.name))) {
             files.push(fullPath);
@@ -232,15 +232,15 @@ export class BatchProcessor {
    * Generate HTML report for batch results
    */
   private async generateBatchReport(results: BatchResult, outputDir: string): Promise<void> {
-    const reportPath = path.join(outputDir, 'batch-report.json');
-    const htmlReportPath = path.join(outputDir, 'index.html');
+    const reportPath = path.join(outputDir, "batch-report.json");
+    const htmlReportPath = path.join(outputDir, "index.html");
 
     // Save JSON report
-    await fs.writeFile(reportPath, JSON.stringify(results, null, 2), 'utf-8');
+    await fs.writeFile(reportPath, JSON.stringify(results, null, 2), "utf-8");
 
     // Generate HTML report
     const html = this.generateHtmlReport(results, outputDir);
-    await fs.writeFile(htmlReportPath, html, 'utf-8');
+    await fs.writeFile(htmlReportPath, html, "utf-8");
   }
 
   /**
@@ -367,27 +367,27 @@ export class BatchProcessor {
                 ${results.results
                   .map((r) => {
                     const fileName = path.basename(r.reference);
-                    const status = r.error ? 'fail' : 'success';
-                    const statusClass = r.error ? 'status-fail' : 'status-success';
+                    const status = r.error ? "fail" : "success";
+                    const statusClass = r.error ? "status-fail" : "status-success";
 
                     // Calculate relative path for diff link
                     const diffLink =
                       r.result && r.result.diffImagePath
-                        ? path.relative(outputDir, r.result.diffImagePath).replace(/\\/g, '/')
+                        ? path.relative(outputDir, r.result.diffImagePath).replace(/\\/g, "/")
                         : null;
 
                     return `<tr>
                         <td>${fileName}</td>
                         <td>${path.basename(r.target)}</td>
                         <td class="${statusClass}">${status}</td>
-                        <td>${r.result ? r.result.difference.toFixed(4) : '-'}</td>
-                        <td>${r.result ? r.result.statistics.pixelsDifferent.toLocaleString() : '-'}</td>
+                        <td>${r.result ? r.result.difference.toFixed(4) : "-"}</td>
+                        <td>${r.result ? r.result.statistics.pixelsDifferent.toLocaleString() : "-"}</td>
                         <td>
-                            ${diffLink ? `<a href="${diffLink}" class="diff-link">View Diff</a>` : '-'}
+                            ${diffLink ? `<a href="${diffLink}" class="diff-link">View Diff</a>` : "-"}
                         </td>
                     </tr>`;
                   })
-                  .join('')}
+                  .join("")}
             </tbody>
         </table>
         
