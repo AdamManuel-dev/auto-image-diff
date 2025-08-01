@@ -15,6 +15,18 @@
 
 ## Process
 
+### This workflow ensures:
+
+No broken code enters the main branch
+Consistent code quality across the team
+Early detection of issues
+Automated checks reduce manual review burden
+Documentation stays current with code changes
+Performance regressions are caught early
+Security vulnerabilities are identified
+Test coverage remains high
+
+> The cyclical nature ensures developers can't proceed until quality standards are met, dramatically reducing the need for large refactoring efforts later. RetryClaude can make mistakes. Please double-check responses.
 
 
 ```mermaid
