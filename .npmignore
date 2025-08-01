@@ -1,0 +1,49 @@
+# Source files
+src/
+examples/
+docs/initial-planning/
+
+# Test files
+**/__tests__/
+*.test.ts
+*.spec.ts
+jest.config.js
+coverage/
+
+# Config files
+.eslintrc.json
+.eslintignore
+.prettierrc
+.prettierignore
+.nvmrc
+.husky/
+tsconfig.json
+tsconfig.examples.json
+
+# Development files
+*.log
+*.tmp
+.DS_Store
+.env
+.env.local
+.vscode/
+.idea/
+
+# Git files
+.git/
+.gitignore
+.github/
+
+# Documentation source
+CONTRIBUTING.md
+SMART_TODO_DAG.md
+
+# Build artifacts that shouldn't be published
+*.tsbuildinfo
+.cache/
+
+# Temporary files
+tmp/
+temp/
+*.swp
+*~
