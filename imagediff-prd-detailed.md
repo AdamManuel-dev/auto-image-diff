@@ -107,7 +107,7 @@ Create a robust CLI tool that automatically aligns and compares UI screenshots r
 
 ```
 Start → Install Tool → Configure Settings → Run Comparison → Review Results → Take Action
-  |         |              |                    |                |              |
+  ↑         |              |                    |                |              |
   |         ↓              ↓                    ↓                ↓              ↓
   |    Package Mgr    Config File          CLI Command      HTML Report    Pass/Fail
   |    or Binary      or Defaults          or Script        or JSON        Decision
