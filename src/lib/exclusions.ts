@@ -1,7 +1,7 @@
 /**
  * @fileoverview Region exclusion system for auto-image-diff
  * @lastmodified 2025-08-01T09:20:00Z
- * 
+ *
  * Features: Define and parse exclusion regions, validate JSON schema
  * Main APIs: parseExclusionFile(), validateExclusions(), ExclusionRegion interface
  * Constraints: Requires valid JSON format, bounds must be positive
@@ -28,7 +28,7 @@ export interface ExclusionsConfig {
 export class ExclusionValidationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'ExclusionValidationError';
+    this.name = "ExclusionValidationError";
   }
 }
 
@@ -36,37 +36,29 @@ export class ExclusionValidationError extends Error {
  * Validates a single exclusion region
  */
 export function validateRegion(region: unknown, index: number): ExclusionRegion {
-  if (!region || typeof region !== 'object') {
-    throw new ExclusionValidationError(
-      `Region at index ${index} must be an object`
-    );
+  if (!region || typeof region !== "object") {
+    throw new ExclusionValidationError(`Region at index ${index} must be an object`);
   }
 
   const r = region as Record<string, unknown>;
 
   // Validate name
-  if (!r.name || typeof r.name !== 'string') {
+  if (!r.name || typeof r.name !== "string") {
     throw new ExclusionValidationError(
       `Region at index ${index} must have a string 'name' property`
     );
   }
 
   // Validate bounds
-  if (!r.bounds || typeof r.bounds !== 'object') {
-    throw new ExclusionValidationError(
-      `Region '${r.name}' must have a 'bounds' object`
-    );
+  if (!r.bounds || typeof r.bounds !== "object") {
+    throw new ExclusionValidationError(`Region '${r.name}' must have a 'bounds' object`);
   }
 
   const bounds = r.bounds as Record<string, unknown>;
-  const requiredBounds = ['x', 'y', 'width', 'height'];
+  const requiredBounds = ["x", "y", "width", "height"];
 
   for (const prop of requiredBounds) {
-    if (
-      typeof bounds[prop] !== 'number' ||
-      bounds[prop] < 0 ||
-      !Number.isFinite(bounds[prop])
-    ) {
+    if (typeof bounds[prop] !== "number" || bounds[prop] < 0 || !Number.isFinite(bounds[prop])) {
       throw new ExclusionValidationError(
         `Region '${r.name}' bounds.${prop} must be a non-negative number`
       );
@@ -74,28 +66,24 @@ export function validateRegion(region: unknown, index: number): ExclusionRegion 
   }
 
   // Validate optional properties
-  if (r.reason !== undefined && typeof r.reason !== 'string') {
-    throw new ExclusionValidationError(
-      `Region '${r.name}' reason must be a string if provided`
-    );
+  if (r.reason !== undefined && typeof r.reason !== "string") {
+    throw new ExclusionValidationError(`Region '${r.name}' reason must be a string if provided`);
   }
 
-  if (r.selector !== undefined && typeof r.selector !== 'string') {
-    throw new ExclusionValidationError(
-      `Region '${r.name}' selector must be a string if provided`
-    );
+  if (r.selector !== undefined && typeof r.selector !== "string") {
+    throw new ExclusionValidationError(`Region '${r.name}' selector must be a string if provided`);
   }
 
   return {
-    name: r.name as string,
+    name: r.name,
     bounds: {
       x: bounds.x as number,
       y: bounds.y as number,
       width: bounds.width as number,
       height: bounds.height as number,
     },
-    ...(r.reason && { reason: r.reason as string }),
-    ...(r.selector && { selector: r.selector as string }),
+    ...(r.reason && { reason: r.reason }),
+    ...(r.selector && { selector: r.selector }),
   };
 }
 
@@ -103,29 +91,25 @@ export function validateRegion(region: unknown, index: number): ExclusionRegion 
  * Validates exclusions configuration
  */
 export function validateExclusions(config: unknown): ExclusionsConfig {
-  if (!config || typeof config !== 'object') {
-    throw new ExclusionValidationError('Exclusions must be an object');
+  if (!config || typeof config !== "object") {
+    throw new ExclusionValidationError("Exclusions must be an object");
   }
 
   const c = config as Record<string, unknown>;
 
   if (!Array.isArray(c.regions)) {
-    throw new ExclusionValidationError(
-      'Exclusions must have a "regions" array'
-    );
+    throw new ExclusionValidationError('Exclusions must have a "regions" array');
   }
 
-  const validatedRegions = c.regions.map((region, index) =>
-    validateRegion(region, index)
-  );
+  const validatedRegions = c.regions.map((region, index) => validateRegion(region, index));
 
-  if (c.version !== undefined && typeof c.version !== 'string') {
-    throw new ExclusionValidationError('Version must be a string if provided');
+  if (c.version !== undefined && typeof c.version !== "string") {
+    throw new ExclusionValidationError("Version must be a string if provided");
   }
 
   return {
     regions: validatedRegions,
-    ...(c.version && { version: c.version as string }),
+    ...(c.version && { version: c.version }),
   };
 }
 
@@ -139,7 +123,7 @@ export function parseExclusionFile(jsonContent: string): ExclusionsConfig {
     parsed = JSON.parse(jsonContent);
   } catch (error) {
     throw new ExclusionValidationError(
-      `Invalid JSON format: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Invalid JSON format: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 
