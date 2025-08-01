@@ -12,6 +12,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import { ImageProcessor, ComparisonResult } from "./imageProcessor";
 import { ExclusionsConfig } from "./exclusions";
+import { SmartPairing } from "./smart-pairing";
 
 export interface BatchOptions {
   pattern?: string;
@@ -22,6 +23,7 @@ export interface BatchOptions {
   maxConcurrency?: number;
   exclusions?: ExclusionsConfig;
   runClassification?: boolean;
+  smartPairing?: boolean;
 }
 
 export interface BatchResult {
@@ -80,8 +82,10 @@ export class BatchProcessor {
       },
     };
 
-    // Match files by relative path
-    const pairs = this.matchFilePairs(referenceDir, referenceFiles, targetDir, targetFiles);
+    // Match files by relative path or smart pairing
+    const pairs = options.smartPairing
+      ? this.smartMatchFilePairs(referenceDir, referenceFiles, targetDir, targetFiles)
+      : this.matchFilePairs(referenceDir, referenceFiles, targetDir, targetFiles);
 
     // Process each pair
     for (const [index, pair] of pairs.entries()) {
@@ -240,6 +244,40 @@ export class BatchProcessor {
     }
 
     return pairs;
+  }
+
+  /**
+   * Smart match files using fuzzy matching algorithm
+   */
+  private smartMatchFilePairs(
+    referenceDir: string,
+    referenceFiles: string[],
+    targetDir: string,
+    targetFiles: string[]
+  ): Array<{ reference: string; target: string; relativePath: string }> {
+    const smartPairing = new SmartPairing({
+      minSimilarity: 0.6,
+      fuzzyMatch: true,
+      ignoreExtensions: false,
+    });
+
+    const smartPairs = smartPairing.findBestPairs(
+      referenceFiles,
+      targetFiles,
+      referenceDir,
+      targetDir
+    );
+
+    // Log pairing report
+    const unpaired = smartPairing.findUnpairedFiles(referenceFiles, targetFiles, smartPairs);
+    const report = smartPairing.generatePairingReport(smartPairs, unpaired);
+    console.log("\n" + report + "\n");
+
+    return smartPairs.map((pair) => ({
+      reference: pair.reference,
+      target: pair.target,
+      relativePath: pair.relativePath,
+    }));
   }
 
   /**

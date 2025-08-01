@@ -16,6 +16,7 @@ import { ImageProcessor } from "./lib/imageProcessor";
 import { BatchProcessor } from "./lib/batchProcessor";
 import * as fs from "fs/promises";
 import { parseExclusionFile } from "./lib/exclusions";
+import { SmartReportGenerator } from "./lib/smart-report-generator";
 
 const program = new Command();
 const imageProcessor = new ImageProcessor();
@@ -228,6 +229,32 @@ program
 
           await fs.writeFile(reportPath, JSON.stringify(smartReport, null, 2));
           console.log(`\n📄 Smart diff report saved to: ${reportPath}`);
+          
+          // Generate HTML report as well
+          const htmlReportPath = output.replace(/\.[^.]+$/, "-smart-report.html");
+          const reportGenerator = new SmartReportGenerator();
+          const htmlReport = reportGenerator.generateSmartReport({
+            metadata: {
+              image1,
+              image2,
+              diffImage: output,
+              timestamp: new Date().toISOString(),
+              version: "1.0",
+            },
+            statistics: result.statistics,
+            classification: result.classification,
+            regions: result.classification.regions.map(r => ({
+              id: r.region.id,
+              bounds: r.region.bounds,
+              type: r.classification.type,
+              confidence: r.classification.confidence,
+              classifier: r.classifier,
+              details: r.classification.details,
+            })),
+          }, path.dirname(htmlReportPath));
+          
+          await fs.writeFile(htmlReportPath, htmlReport);
+          console.log(`📄 Smart HTML report saved to: ${htmlReportPath}`);
         }
       } catch (error) {
         console.error(
@@ -352,6 +379,7 @@ program
   .option("--no-parallel", "Disable parallel processing")
   .option("-e, --exclude <regions>", "Path to exclusions.json file defining regions to ignore")
   .option("-s, --smart", "Run smart classification on differences")
+  .option("--smart-pairing", "Use smart file pairing algorithm for fuzzy matching")
   .action(
     async (
       referenceDir: string,
@@ -364,6 +392,7 @@ program
         parallel: boolean;
         exclude?: string;
         smart?: boolean;
+        smartPairing?: boolean;
       }
     ) => {
       try {
@@ -393,6 +422,7 @@ program
           parallel: options.parallel,
           exclusions,
           runClassification: options.smart,
+          smartPairing: options.smartPairing,
         });
 
         console.log("\n✅ Batch processing complete!");

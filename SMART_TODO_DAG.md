@@ -108,14 +108,14 @@ After Phase 3:
 - [x] Task 14: Add --focus CLI option (depends on 11)
 - [x] Task 20: Add regions array to JSON output (depends on 11)
 
-### Phase 5: Enhanced Reporting
+### Phase 5: Enhanced Reporting ✅ COMPLETED
 
 After Phase 4:
 
-- [ ] Task 21: Include confidence scores (depends on 20)
-- [ ] Task 17: Add categorization to HTML reports (depends on 20)
-- [ ] Task 15: Create smart HTML report base (depends on 13)
-- [ ] Task 27: Smart pairing algorithm (depends on 11)
+- [x] Task 21: Include confidence scores (depends on 20)
+- [x] Task 17: Add categorization to HTML reports (depends on 20)
+- [x] Task 15: Create smart HTML report base (depends on 13)
+- [x] Task 27: Smart pairing algorithm (depends on 11)
 
 ### Phase 6: Advanced UI & Processing
 
