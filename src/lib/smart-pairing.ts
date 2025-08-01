@@ -112,6 +112,11 @@ export class SmartPairing {
   private calculateSimilarity(name1: string, name2: string): number {
     if (name1 === name2) return 1.0;
 
+    // In case-sensitive mode, if names differ only by case, return very low score
+    if (this.options.caseSensitive && name1.toLowerCase() === name2.toLowerCase()) {
+      return 0.1; // Below default minSimilarity threshold
+    }
+
     if (!this.options.fuzzyMatch) {
       return 0.0;
     }
@@ -125,17 +130,9 @@ export class SmartPairing {
       this.tokenMatchScore(name1, name2),
     ];
 
-    // Return weighted average
-    const weights = [5, 3, 3, 2, 2];
-    let totalScore = 0;
-    let totalWeight = 0;
-
-    for (let i = 0; i < strategies.length; i++) {
-      totalScore += strategies[i] * weights[i];
-      totalWeight += weights[i];
-    }
-
-    return totalScore / totalWeight;
+    // Return the maximum score from any strategy
+    // This gives better results for partial matches
+    return Math.max(...strategies);
   }
 
   /**

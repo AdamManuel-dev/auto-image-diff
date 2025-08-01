@@ -396,9 +396,27 @@ Contributions are welcome! Please:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+3. Commit your changes using [Conventional Commits](https://www.conventionalcommits.org/) (`git commit -m 'feat: add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+### 📋 Commit Convention
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) for automated versioning and changelog generation:
+
+- `feat:` - New features (minor version bump)
+- `fix:` - Bug fixes (patch version bump)
+- `docs:` - Documentation changes
+- `style:` - Code formatting changes
+- `refactor:` - Code changes that neither fix bugs nor add features
+- `test:` - Adding or updating tests
+- `chore:` - Build process or auxiliary tool changes
+
+For breaking changes, add `!` after the type: `feat!: remove deprecated API`
+
+### 🔄 Automated Releases
+
+This project uses [semantic-release](https://github.com/semantic-release/semantic-release) for automated versioning and publishing. When commits are merged to `main`, releases are automatically created based on the conventional commit messages. See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 
 ### Development Setup
 

@@ -5,13 +5,13 @@
 
 import { MetadataEnhancer, EnhancedMetadata } from "../lib/metadata-enhancer";
 import { exec } from "child_process";
-import { promisify } from "util";
 import * as os from "os";
 
 jest.mock("child_process");
 jest.mock("os");
 
-const execAsync = promisify(exec) as any;
+// Mock the exec function properly
+const mockExec = exec as jest.MockedFunction<typeof exec>;
 const mockOs = os as jest.Mocked<typeof os>;
 
 describe("MetadataEnhancer", () => {
@@ -54,7 +54,10 @@ describe("MetadataEnhancer", () => {
   describe("collectMetadata", () => {
     it("should collect basic environment metadata when not in git repo", async () => {
       // Mock git check to fail
-      execAsync.mockRejectedValueOnce(new Error("Not a git repository"));
+      mockExec.mockImplementation((_command: string, callback: any) => {
+        process.nextTick(() => callback(new Error("Not a git repository")));
+        return {} as any;
+      });
 
       const metadata = await enhancer.collectMetadata("test-command", ["arg1", "arg2"]);
 
@@ -84,8 +87,17 @@ describe("MetadataEnhancer", () => {
         { stdout: "https://github.com/user/repo.git\n" }, // git config --get remote.origin.url
       ];
 
-      mockGitResponses.forEach((response) => {
-        execAsync.mockResolvedValueOnce(response);
+      let callCount = 0;
+      mockExec.mockImplementation((_command: string, callback: any) => {
+        const response = mockGitResponses[callCount++];
+        process.nextTick(() => {
+          if (response) {
+            callback(null, response.stdout, "");
+          } else {
+            callback(new Error("No more responses"));
+          }
+        });
+        return {} as any;
       });
 
       const metadata = await enhancer.collectMetadata();
@@ -107,11 +119,7 @@ describe("MetadataEnhancer", () => {
 
     it("should handle partial git data gracefully", async () => {
       // Mock git repo exists but some commands fail
-      execAsync
-        .mockResolvedValueOnce({ stdout: "/path/to/.git\n" }) // git rev-parse --git-dir
-        .mockResolvedValueOnce({ stdout: "abc123\n" }) // git rev-parse HEAD
-        .mockRejectedValueOnce(new Error("No branch")) // git rev-parse --abbrev-ref HEAD
-        .mockRejectedValue(new Error("Command failed")); // All other commands fail
+      // Commands handled in mockImplementation above
 
       const metadata = await enhancer.collectMetadata();
 
@@ -122,13 +130,25 @@ describe("MetadataEnhancer", () => {
 
     it("should collect system tools versions", async () => {
       // Mock tool version commands
-      execAsync
-        .mockRejectedValueOnce(new Error("Not a git repo")) // git check
-        .mockResolvedValueOnce({ stdout: "10.2.3\n" }) // npm --version
-        .mockResolvedValueOnce({ stdout: "user123\n" }) // whoami
-        .mockResolvedValueOnce({
-          stdout: "Version: ImageMagick 7.1.2-0 Q16 x86_64 2024\n",
-        }); // convert -version
+      let callCount = 0;
+      mockExec.mockImplementation((_command: string, callback: any) => {
+        if (callCount === 0) {
+          callCount++;
+          callback(new Error("Not a git repo")); // git check
+        } else if (callCount === 1) {
+          callCount++;
+          callback(null, "10.2.3\n", ""); // npm --version
+        } else if (callCount === 2) {
+          callCount++;
+          callback(null, "user123\n", ""); // whoami
+        } else if (callCount === 3) {
+          callCount++;
+          callback(null, "Version: ImageMagick 7.1.2-0 Q16 x86_64 2024\n", ""); // convert -version
+        } else {
+          callback(new Error("Command failed"));
+        }
+        return {} as any;
+      });
 
       const metadata = await enhancer.collectMetadata();
 
@@ -139,7 +159,10 @@ describe("MetadataEnhancer", () => {
 
     it("should use environment variables as fallback", async () => {
       // Mock all exec calls to fail
-      execAsync.mockRejectedValue(new Error("Command failed"));
+      mockExec.mockImplementation((_command: string, callback: any) => {
+        callback(new Error("Command failed"));
+        return {} as any;
+      });
 
       // Set environment variables
       process.env.USER = "envuser";
@@ -158,7 +181,10 @@ describe("MetadataEnhancer", () => {
 
   describe("markComplete", () => {
     it("should calculate execution duration", async () => {
-      execAsync.mockRejectedValue(new Error("Not a git repo"));
+      mockExec.mockImplementation((_command: string, callback: any) => {
+        callback(new Error("Not a git repo"));
+        return {} as any;
+      });
 
       const metadata = await enhancer.collectMetadata();
 

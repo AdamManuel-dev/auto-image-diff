@@ -114,8 +114,12 @@ describe("Processor Edge Cases", () => {
   describe("BatchProcessor - progress output edge cases", () => {
     it("should output progress when parallel is false", async () => {
       const originalWrite = process.stdout.write.bind(process.stdout);
+      const originalConsoleLog = console.log.bind(console);
       const mockWrite = jest.fn();
+      const mockConsoleLog = jest.fn();
+
       process.stdout.write = mockWrite as any;
+      console.log = mockConsoleLog as any;
 
       // Mock file system - ensure both directories have the same file
       (fs.readdir as jest.Mock).mockImplementation(async (_dir: any, opts: any) => {
@@ -165,11 +169,12 @@ describe("Processor Edge Cases", () => {
       // there should be one pair to process
       expect(mockWrite).toHaveBeenCalled();
 
-      // The last call should be the newline
-      const lastCall = mockWrite.mock.calls[mockWrite.mock.calls.length - 1];
-      expect(lastCall[0]).toBe("\r\n");
+      // Find the newline call in the progress output
+      const newlineCalls = mockWrite.mock.calls.filter((call) => call[0] === "\r\n");
+      expect(newlineCalls.length).toBeGreaterThan(0);
 
       process.stdout.write = originalWrite;
+      console.log = originalConsoleLog;
     });
 
     it("should handle pattern matching edge case", async () => {

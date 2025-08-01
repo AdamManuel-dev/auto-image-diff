@@ -320,8 +320,8 @@ describe("CssFixSuggester", () => {
         details: { colorVariance: 0.2 },
       };
 
-      // Access private method through type assertion
-      const fixes = (suggester as any).analyzeColorChange(classification);
+      // Access public method for testing
+      const fixes = suggester.analyzeColorChange(classification);
 
       expect(fixes).toHaveLength(3);
       expect(fixes[0].property).toBe("color");
@@ -340,8 +340,8 @@ describe("CssFixSuggester", () => {
         details: { shift: { x: -15, y: 20 } },
       };
 
-      // Access private method through type assertion
-      const fixes = (suggester as any).analyzePositionChange(classification);
+      // Access public method for testing
+      const fixes = suggester.analyzePositionChange(classification);
 
       expect(fixes).toHaveLength(2);
       expect(fixes.find((f: CssFix) => f.property === "margin-right")).toBeDefined();
@@ -358,8 +358,8 @@ describe("CssFixSuggester", () => {
         details: { shift: { x: 2, y: -3 } },
       };
 
-      // Access private method through type assertion
-      const fixes = (suggester as any).analyzePositionChange(classification);
+      // Access public method for testing
+      const fixes = suggester.analyzePositionChange(classification);
 
       expect(fixes).toHaveLength(0);
     });

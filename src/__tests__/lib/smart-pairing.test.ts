@@ -14,16 +14,8 @@ describe("SmartPairing", () => {
 
   describe("findBestPairs", () => {
     it("should match identical filenames", () => {
-      const referenceFiles = [
-        "/ref/image1.png",
-        "/ref/image2.png",
-        "/ref/image3.png",
-      ];
-      const targetFiles = [
-        "/target/image1.png",
-        "/target/image2.png",
-        "/target/image3.png",
-      ];
+      const referenceFiles = ["/ref/image1.png", "/ref/image2.png", "/ref/image3.png"];
+      const targetFiles = ["/target/image1.png", "/target/image2.png", "/target/image3.png"];
 
       const pairs = pairing.findBestPairs(referenceFiles, targetFiles, "/ref", "/target");
 
@@ -45,7 +37,7 @@ describe("SmartPairing", () => {
 
     it("should not match files with different cases when case sensitive", () => {
       pairing = new SmartPairing({ caseSensitive: true });
-      
+
       const referenceFiles = ["/ref/HomePage.png"];
       const targetFiles = ["/target/homepage.png"];
 
@@ -55,11 +47,7 @@ describe("SmartPairing", () => {
     });
 
     it("should match files with similar names using fuzzy matching", () => {
-      const referenceFiles = [
-        "/ref/home-page.png",
-        "/ref/about_us.png",
-        "/ref/contact.form.png",
-      ];
+      const referenceFiles = ["/ref/home-page.png", "/ref/about_us.png", "/ref/contact.form.png"];
       const targetFiles = [
         "/target/home_page.png",
         "/target/about-us.png",
@@ -69,14 +57,14 @@ describe("SmartPairing", () => {
       const pairs = pairing.findBestPairs(referenceFiles, targetFiles, "/ref", "/target");
 
       expect(pairs).toHaveLength(3);
-      pairs.forEach(pair => {
+      pairs.forEach((pair) => {
         expect(pair.similarity).toBeGreaterThan(0.7);
       });
     });
 
     it("should ignore extensions when option is set", () => {
       pairing = new SmartPairing({ ignoreExtensions: true });
-      
+
       const referenceFiles = ["/ref/image.png"];
       const targetFiles = ["/target/image.jpg"];
 
@@ -88,7 +76,7 @@ describe("SmartPairing", () => {
 
     it("should respect minimum similarity threshold", () => {
       pairing = new SmartPairing({ minSimilarity: 0.9 });
-      
+
       const referenceFiles = ["/ref/homepage.png"];
       const targetFiles = ["/target/home.png"];
 
@@ -127,7 +115,7 @@ describe("SmartPairing", () => {
     it("should give high score to names with common prefix", () => {
       // Create new instance to ensure minSimilarity is set
       pairing = new SmartPairing({ minSimilarity: 0.3 });
-      
+
       const pairs = pairing.findBestPairs(
         ["/ref/homepage-v1.png"],
         ["/target/homepage-v2.png"],
@@ -142,7 +130,7 @@ describe("SmartPairing", () => {
     it("should give high score to names with common suffix", () => {
       // Lower threshold for this test case
       pairing = new SmartPairing({ minSimilarity: 0.3 });
-      
+
       const pairs = pairing.findBestPairs(
         ["/ref/old-homepage.png"],
         ["/target/new-homepage.png"],
@@ -157,7 +145,7 @@ describe("SmartPairing", () => {
     it("should handle token-based matching", () => {
       // Lower threshold for token matching
       pairing = new SmartPairing({ minSimilarity: 0.4 });
-      
+
       const pairs = pairing.findBestPairs(
         ["/ref/user-profile-settings.png"],
         ["/target/settings-user-profile.png"],
@@ -172,21 +160,14 @@ describe("SmartPairing", () => {
 
   describe("findUnpairedFiles", () => {
     it("should identify unpaired files correctly", () => {
-      const referenceFiles = [
-        "/ref/image1.png",
-        "/ref/image2.png",
-        "/ref/image3.png",
-      ];
-      const targetFiles = [
-        "/target/image1.png",
-        "/target/image4.png",
-      ];
+      const referenceFiles = ["/ref/homepage.png", "/ref/login-form.png", "/ref/dashboard.png"];
+      const targetFiles = ["/target/homepage.png", "/target/completely-different.png"];
 
       const pairs = pairing.findBestPairs(referenceFiles, targetFiles, "/ref", "/target");
       const unpaired = pairing.findUnpairedFiles(referenceFiles, targetFiles, pairs);
 
-      expect(unpaired.unpairedReference).toEqual(["/ref/image2.png", "/ref/image3.png"]);
-      expect(unpaired.unpairedTarget).toEqual(["/target/image4.png"]);
+      expect(unpaired.unpairedReference).toEqual(["/ref/login-form.png", "/ref/dashboard.png"]);
+      expect(unpaired.unpairedTarget).toEqual(["/target/completely-different.png"]);
     });
 
     it("should handle all files paired", () => {
@@ -203,15 +184,8 @@ describe("SmartPairing", () => {
 
   describe("generatePairingReport", () => {
     it("should generate comprehensive report", () => {
-      const referenceFiles = [
-        "/ref/home.png",
-        "/ref/about.png",
-        "/ref/contact.png",
-      ];
-      const targetFiles = [
-        "/target/home.png",
-        "/target/services.png",
-      ];
+      const referenceFiles = ["/ref/home.png", "/ref/about.png", "/ref/contact.png"];
+      const targetFiles = ["/target/home.png", "/target/services.png"];
 
       const pairs = pairing.findBestPairs(referenceFiles, targetFiles, "/ref", "/target");
       const unpaired = pairing.findUnpairedFiles(referenceFiles, targetFiles, pairs);
