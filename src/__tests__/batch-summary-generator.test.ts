@@ -175,7 +175,7 @@ describe("BatchSummaryGenerator", () => {
 
       expect(summary.metadata.version).toBe("1.0");
       expect(summary.metadata.timestamp).toBeDefined();
-      
+
       expect(summary.overview.totalFiles).toBe(10);
       expect(summary.overview.processed).toBe(8);
       expect(summary.overview.failed).toBe(2);
@@ -288,8 +288,8 @@ describe("BatchSummaryGenerator", () => {
       const summaryData = createMockSummaryData();
       const html = generator.generateHtmlReport(summaryData);
 
-      expect(html).toContain("<canvas id=\"comparisonChart\"></canvas>");
-      expect(html).toContain("<canvas id=\"classificationChart\"></canvas>");
+      expect(html).toContain('<canvas id="comparisonChart"></canvas>');
+      expect(html).toContain('<canvas id="classificationChart"></canvas>');
       expect(html).toContain("chart.js");
       expect(html).toContain("new Chart");
     });
@@ -345,7 +345,7 @@ describe("BatchSummaryGenerator", () => {
   describe("formatDuration", () => {
     it("should format durations correctly", () => {
       const generator = new BatchSummaryGenerator();
-      
+
       // Access private method
       const formatDuration = (generator as any).formatDuration.bind(generator);
 

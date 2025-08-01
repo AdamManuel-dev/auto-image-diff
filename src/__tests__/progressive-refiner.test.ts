@@ -231,10 +231,7 @@ describe("ProgressiveRefiner", () => {
       const loaded = await refinerWithSession.loadSession("refine-123");
 
       expect(loaded).toEqual(sessionData);
-      expect(mockFs.readFile).toHaveBeenCalledWith(
-        "/tmp/sessions/refine-123.json",
-        "utf-8"
-      );
+      expect(mockFs.readFile).toHaveBeenCalledWith("/tmp/sessions/refine-123.json", "utf-8");
     });
 
     it("should throw error when session path not configured", async () => {
@@ -360,8 +357,8 @@ describe("ProgressiveRefiner", () => {
 
       const { suggestions } = await refiner.startRefinement(result);
 
-      const clusterSuggestions = suggestions.filter(
-        (s) => s.reason.includes("similar regions clustered together")
+      const clusterSuggestions = suggestions.filter((s) =>
+        s.reason.includes("similar regions clustered together")
       );
 
       expect(clusterSuggestions.length).toBeGreaterThan(0);

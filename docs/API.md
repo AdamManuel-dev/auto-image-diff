@@ -23,7 +23,7 @@
 The main class for image comparison and diff generation.
 
 ```typescript
-import { ImageProcessor } from 'auto-image-diff';
+import { ImageProcessor } from "auto-image-diff";
 
 const processor = new ImageProcessor();
 ```
@@ -31,6 +31,7 @@ const processor = new ImageProcessor();
 #### Methods
 
 ##### alignImages
+
 Aligns two images using ImageMagick's subimage search.
 
 ```typescript
@@ -43,6 +44,7 @@ async alignImages(
 ```
 
 **Parameters:**
+
 - `referenceImage`: Path to the reference image
 - `targetImage`: Path to the target image to align
 - `outputPath`: Where to save the aligned image
@@ -51,6 +53,7 @@ async alignImages(
   - `threshold`: Alignment threshold (optional)
 
 ##### compareImages
+
 Compares two images and returns difference metrics.
 
 ```typescript
@@ -62,6 +65,7 @@ async compareImages(
 ```
 
 **Returns:**
+
 ```typescript
 {
   difference: number;
@@ -70,11 +74,12 @@ async compareImages(
     pixelsDifferent: number;
     totalPixels: number;
     percentageDifferent: number;
-  };
+  }
 }
 ```
 
 ##### generateDiff
+
 Generates a visual diff with optional classification and metadata.
 
 ```typescript
@@ -87,6 +92,7 @@ async generateDiff(
 ```
 
 **Options:**
+
 - `highlightColor`: Color for highlighting differences (default: 'red')
 - `lowlight`: Whether to dim unchanged areas (default: true)
 - `exclusions`: Regions to exclude from comparison
@@ -100,7 +106,7 @@ async generateDiff(
 Processes multiple image comparisons with parallel support.
 
 ```typescript
-import { BatchProcessor } from 'auto-image-diff';
+import { BatchProcessor } from "auto-image-diff";
 
 const batchProcessor = new BatchProcessor();
 ```
@@ -108,6 +114,7 @@ const batchProcessor = new BatchProcessor();
 #### Methods
 
 ##### processBatch
+
 Process a batch of image comparisons.
 
 ```typescript
@@ -119,7 +126,8 @@ async processBatch(
 ```
 
 **Config Options:**
-- `pattern`: File pattern to match (default: '*.png')
+
+- `pattern`: File pattern to match (default: '\*.png')
 - `recursive`: Scan directories recursively
 - `outputDir`: Where to save results
 - `threshold`: Difference threshold percentage
@@ -130,6 +138,7 @@ async processBatch(
 - `smartPairing`: Use fuzzy file matching
 
 **Returns:**
+
 ```typescript
 {
   totalFiles: number;
@@ -140,7 +149,7 @@ async processBatch(
     differentImages: number;
     totalPixelsDifferent: number;
     averageDifference: number;
-  };
+  }
   results: Array<{
     reference: string;
     target: string;
@@ -155,7 +164,7 @@ async processBatch(
 Manages difference classification across multiple classifiers.
 
 ```typescript
-import { ClassifierManager } from 'auto-image-diff';
+import { ClassifierManager } from "auto-image-diff";
 
 const manager = new ClassifierManager();
 ```
@@ -163,6 +172,7 @@ const manager = new ClassifierManager();
 #### Methods
 
 ##### registerClassifier
+
 Register a custom classifier.
 
 ```typescript
@@ -170,6 +180,7 @@ registerClassifier(classifier: DifferenceClassifier): void
 ```
 
 ##### classifyRegions
+
 Classify difference regions using all registered classifiers.
 
 ```typescript
@@ -180,6 +191,7 @@ classifyRegions(
 ```
 
 **Returns:**
+
 ```typescript
 {
   totalRegions: number;
@@ -200,19 +212,20 @@ classifyRegions(
 Iteratively refines comparison results for better accuracy.
 
 ```typescript
-import { ProgressiveRefiner } from 'auto-image-diff';
+import { ProgressiveRefiner } from "auto-image-diff";
 
 const refiner = new ProgressiveRefiner({
   minConfidence: 0.7,
-  excludeTypes: ['style'],
+  excludeTypes: ["style"],
   targetDifferenceThreshold: 0.5,
-  maxIterations: 10
+  maxIterations: 10,
 });
 ```
 
 #### Methods
 
 ##### startRefinement
+
 Begin progressive refinement process.
 
 ```typescript
@@ -227,6 +240,7 @@ async startRefinement(
 ```
 
 ##### applyRefinement
+
 Apply accepted/rejected suggestions.
 
 ```typescript
@@ -238,6 +252,7 @@ async applyRefinement(
 ```
 
 ##### generateReport
+
 Generate a refinement session report.
 
 ```typescript
@@ -249,7 +264,7 @@ generateReport(): string
 Collects enhanced metadata about the execution environment.
 
 ```typescript
-import { MetadataEnhancer } from 'auto-image-diff';
+import { MetadataEnhancer } from "auto-image-diff";
 
 const enhancer = new MetadataEnhancer();
 ```
@@ -257,6 +272,7 @@ const enhancer = new MetadataEnhancer();
 #### Methods
 
 ##### collectMetadata
+
 Collect git and environment information.
 
 ```typescript
@@ -267,6 +283,7 @@ async collectMetadata(
 ```
 
 **Returns:**
+
 ```typescript
 {
   git?: {
@@ -297,17 +314,18 @@ async collectMetadata(
 Intelligent file pairing for batch processing.
 
 ```typescript
-import { SmartPairing } from 'auto-image-diff';
+import { SmartPairing } from "auto-image-diff";
 
 const pairing = new SmartPairing({
-  strategy: 'similarity',
-  minSimilarity: 0.7
+  strategy: "similarity",
+  minSimilarity: 0.7,
 });
 ```
 
 #### Methods
 
 ##### findBestPairs
+
 Find optimal file pairs between directories.
 
 ```typescript
@@ -324,7 +342,7 @@ findBestPairs(
 Generates CSS fixes for detected style changes.
 
 ```typescript
-import { CssFixSuggester } from 'auto-image-diff';
+import { CssFixSuggester } from "auto-image-diff";
 
 const suggester = new CssFixSuggester();
 ```
@@ -332,6 +350,7 @@ const suggester = new CssFixSuggester();
 #### Methods
 
 ##### suggestFixes
+
 Generate CSS fix suggestions.
 
 ```typescript
@@ -342,6 +361,7 @@ suggestFixes(
 ```
 
 ##### formatAsCss
+
 Format suggestions as CSS code.
 
 ```typescript
@@ -353,7 +373,7 @@ formatAsCss(suggestions: FixSuggestion[]): string
 Embeds and extracts metadata from PNG files.
 
 ```typescript
-import { PngMetadataEmbedder } from 'auto-image-diff';
+import { PngMetadataEmbedder } from "auto-image-diff";
 
 const embedder = new PngMetadataEmbedder();
 ```
@@ -361,6 +381,7 @@ const embedder = new PngMetadataEmbedder();
 #### Methods
 
 ##### embedMetadata
+
 Embed metadata into a PNG file.
 
 ```typescript
@@ -372,6 +393,7 @@ async embedMetadata(
 ```
 
 ##### extractMetadata
+
 Extract embedded metadata from PNG.
 
 ```typescript
@@ -383,18 +405,19 @@ async extractMetadata(pngPath: string): Promise<EmbeddedMetadata | null>
 Generates comprehensive batch processing reports.
 
 ```typescript
-import { BatchSummaryGenerator } from 'auto-image-diff';
+import { BatchSummaryGenerator } from "auto-image-diff";
 
 const generator = new BatchSummaryGenerator({
-  title: 'Visual Regression Report',
+  title: "Visual Regression Report",
   includeCharts: true,
-  theme: 'light'
+  theme: "light",
 });
 ```
 
 #### Methods
 
 ##### generateSummary
+
 Generate summary data from batch results.
 
 ```typescript
@@ -405,6 +428,7 @@ generateSummary(
 ```
 
 ##### generateHtmlReport
+
 Generate HTML report with visualizations.
 
 ```typescript
@@ -414,20 +438,22 @@ generateHtmlReport(summaryData: BatchSummaryData): string
 ## Types and Interfaces
 
 ### DifferenceType
+
 ```typescript
 enum DifferenceType {
-  CONTENT = 'content',
-  STYLE = 'style',
-  LAYOUT = 'layout',
-  SIZE = 'size',
-  STRUCTURAL = 'structural',
-  NEW_ELEMENT = 'new_element',
-  REMOVED_ELEMENT = 'removed_element',
-  UNKNOWN = 'unknown'
+  CONTENT = "content",
+  STYLE = "style",
+  LAYOUT = "layout",
+  SIZE = "size",
+  STRUCTURAL = "structural",
+  NEW_ELEMENT = "new_element",
+  REMOVED_ELEMENT = "removed_element",
+  UNKNOWN = "unknown",
 }
 ```
 
 ### DifferenceRegion
+
 ```typescript
 interface DifferenceRegion {
   id: number;
@@ -444,6 +470,7 @@ interface DifferenceRegion {
 ```
 
 ### ClassificationResult
+
 ```typescript
 interface ClassificationResult {
   type: DifferenceType;
@@ -454,6 +481,7 @@ interface ClassificationResult {
 ```
 
 ### ExclusionsConfig
+
 ```typescript
 interface ExclusionsConfig {
   version?: string;
@@ -474,9 +502,10 @@ interface ExclusionRegion {
 ```
 
 ### RefinementSuggestion
+
 ```typescript
 interface RefinementSuggestion {
-  type: 'exclude' | 'include' | 'reclassify' | 'css-fix';
+  type: "exclude" | "include" | "reclassify" | "css-fix";
   reason: string;
   confidence: number;
   region?: {
@@ -494,18 +523,23 @@ interface RefinementSuggestion {
 ### Built-in Classifiers
 
 #### ContentClassifier
+
 Detects changes in text, images, and data content.
 
 #### StyleClassifier
+
 Identifies color, font, and visual styling changes.
 
 #### LayoutClassifier
+
 Detects position and arrangement changes.
 
 #### SizeClassifier
+
 Identifies dimension and scaling changes.
 
 #### StructuralClassifier
+
 Detects DOM structure modifications.
 
 ### Custom Classifiers
@@ -513,11 +547,11 @@ Detects DOM structure modifications.
 Create custom classifiers by extending the base class:
 
 ```typescript
-import { DifferenceClassifier, DifferenceRegion, AnalysisContext } from 'auto-image-diff';
+import { DifferenceClassifier, DifferenceRegion, AnalysisContext } from "auto-image-diff";
 
 export class MyCustomClassifier extends DifferenceClassifier {
   constructor() {
-    super('my-custom', 100); // name and priority
+    super("my-custom", 100); // name and priority
   }
 
   async classify(
@@ -528,8 +562,10 @@ export class MyCustomClassifier extends DifferenceClassifier {
     return {
       type: DifferenceType.CUSTOM,
       confidence: 0.9,
-      subType: 'specific-change',
-      details: { /* custom data */ }
+      subType: "specific-change",
+      details: {
+        /* custom data */
+      },
     };
   }
 
@@ -549,9 +585,9 @@ try {
   const result = await processor.generateDiff(image1, image2, output);
 } catch (error) {
   if (error instanceof ImageProcessingError) {
-    console.error('Image processing failed:', error.message);
+    console.error("Image processing failed:", error.message);
   } else if (error instanceof ClassificationError) {
-    console.error('Classification failed:', error.message);
+    console.error("Classification failed:", error.message);
   }
 }
 ```

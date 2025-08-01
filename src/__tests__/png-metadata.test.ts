@@ -5,6 +5,8 @@
 
 import { PngMetadataEmbedder, EmbeddedMetadata } from "../lib/png-metadata";
 import { ComparisonResult } from "../lib/imageProcessor";
+import { ClassificationSummary } from "../lib/classifiers/manager";
+import { EnhancedMetadata } from "../lib/metadata-enhancer";
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as os from "os";
@@ -22,24 +24,78 @@ describe("PngMetadataEmbedder", () => {
     // Create a minimal valid PNG (1x1 red pixel)
     const pngData = Buffer.from([
       // PNG signature
-      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+      0x89,
+      0x50,
+      0x4e,
+      0x47,
+      0x0d,
+      0x0a,
+      0x1a,
+      0x0a,
       // IHDR chunk
-      0x00, 0x00, 0x00, 0x0d, // Length: 13
-      0x49, 0x48, 0x44, 0x52, // Type: IHDR
-      0x00, 0x00, 0x00, 0x01, // Width: 1
-      0x00, 0x00, 0x00, 0x01, // Height: 1
-      0x08, 0x02, // Bit depth: 8, Color type: 2 (RGB)
-      0x00, 0x00, 0x00, // Compression, Filter, Interlace
-      0x90, 0x77, 0x53, 0xde, // CRC
+      0x00,
+      0x00,
+      0x00,
+      0x0d, // Length: 13
+      0x49,
+      0x48,
+      0x44,
+      0x52, // Type: IHDR
+      0x00,
+      0x00,
+      0x00,
+      0x01, // Width: 1
+      0x00,
+      0x00,
+      0x00,
+      0x01, // Height: 1
+      0x08,
+      0x02, // Bit depth: 8, Color type: 2 (RGB)
+      0x00,
+      0x00,
+      0x00, // Compression, Filter, Interlace
+      0x90,
+      0x77,
+      0x53,
+      0xde, // CRC
       // IDAT chunk (compressed pixel data)
-      0x00, 0x00, 0x00, 0x0c, // Length: 12
-      0x49, 0x44, 0x41, 0x54, // Type: IDAT
-      0x08, 0xd7, 0x63, 0xf8, 0xcf, 0xc0, 0x00, 0x00, 0x03, 0x01, 0x01, 0x00, // Data
-      0x18, 0xdd, 0x8d, 0xb4, // CRC
+      0x00,
+      0x00,
+      0x00,
+      0x0c, // Length: 12
+      0x49,
+      0x44,
+      0x41,
+      0x54, // Type: IDAT
+      0x08,
+      0xd7,
+      0x63,
+      0xf8,
+      0xcf,
+      0xc0,
+      0x00,
+      0x00,
+      0x03,
+      0x01,
+      0x01,
+      0x00, // Data
+      0x18,
+      0xdd,
+      0x8d,
+      0xb4, // CRC
       // IEND chunk
-      0x00, 0x00, 0x00, 0x00, // Length: 0
-      0x49, 0x45, 0x4e, 0x44, // Type: IEND
-      0xae, 0x42, 0x60, 0x82, // CRC
+      0x00,
+      0x00,
+      0x00,
+      0x00, // Length: 0
+      0x49,
+      0x45,
+      0x4e,
+      0x44, // Type: IEND
+      0xae,
+      0x42,
+      0x60,
+      0x82, // CRC
     ]);
 
     await fs.writeFile(testPngPath, pngData);
@@ -75,17 +131,34 @@ describe("PngMetadataEmbedder", () => {
 
       // Check that metadata can be extracted
       const extracted = await embedder.extractMetadata(testPngPath);
-      expect(extracted).toEqual(expect.objectContaining({
-        version: "1.0",
-        timestamp: "2025-01-01T12:00:00Z",
-      }));
+      expect(extracted).toEqual(
+        expect.objectContaining({
+          version: "1.0",
+          timestamp: "2025-01-01T12:00:00Z",
+        })
+      );
     });
 
     it("should reject non-PNG files", async () => {
       const nonPngPath = path.join(tempDir, "not-a-png.txt");
       await fs.writeFile(nonPngPath, "Not a PNG file");
 
-      await expect(embedder.embedMetadata(nonPngPath, {} as any)).rejects.toThrow(
+      const mockMetadata: EmbeddedMetadata = {
+        version: "1.0.0",
+        timestamp: new Date().toISOString(),
+        comparison: {
+          source: {
+            image1: "test1.png",
+            image2: "test2.png",
+          },
+          statistics: {
+            pixelsDifferent: 0,
+            totalPixels: 100,
+            percentageDifferent: 0,
+          },
+        },
+      };
+      await expect(embedder.embedMetadata(nonPngPath, mockMetadata)).rejects.toThrow(
         "File is not a valid PNG image"
       );
     });
@@ -149,7 +222,7 @@ describe("PngMetadataEmbedder", () => {
         ],
       };
 
-      await embedder.embedMetadata(testPngPath, metadata as EmbeddedMetadata);
+      await embedder.embedMetadata(testPngPath, metadata);
       const extracted = await embedder.extractMetadata(testPngPath);
 
       expect(extracted).toEqual(expect.objectContaining(metadata));
@@ -158,7 +231,9 @@ describe("PngMetadataEmbedder", () => {
 
   describe("createMetadataFromResult", () => {
     it("should create metadata from comparison result", () => {
-      const result = {
+      const result: ComparisonResult = {
+        difference: 5.0,
+        isEqual: false,
         statistics: {
           pixelsDifferent: 500,
           totalPixels: 10000,
@@ -166,10 +241,11 @@ describe("PngMetadataEmbedder", () => {
         },
       };
 
-      const classification = {
+      const classification: ClassificationSummary = {
         totalRegions: 3,
         classifiedRegions: 3,
-        byType: { content: 2, style: 1 },
+        unclassifiedRegions: 0,
+        byType: { content: 2, style: 1, layout: 0, text: 0, unknown: 0 },
         confidence: { min: 0.8, avg: 0.9, max: 0.95 },
         regions: [
           {
@@ -187,10 +263,10 @@ describe("PngMetadataEmbedder", () => {
       };
 
       const metadata = embedder.createMetadataFromResult(
-        result as any,
+        result,
         "image1.png",
         "image2.png",
-        classification as any
+        classification
       );
 
       expect(metadata.version).toBe("1.1");
@@ -208,11 +284,15 @@ describe("PngMetadataEmbedder", () => {
       };
 
       const metadata = embedder.createMetadataFromResult(
-        { statistics: { pixelsDifferent: 0, totalPixels: 100, percentageDifferent: 0 } } as ComparisonResult,
+        {
+          difference: 0,
+          isEqual: true,
+          statistics: { pixelsDifferent: 0, totalPixels: 100, percentageDifferent: 0 },
+        } as ComparisonResult,
         "a.png",
         "b.png",
         undefined,
-        enhancedMetadata as any
+        enhancedMetadata as EnhancedMetadata
       );
 
       expect(metadata.enhanced).toEqual(enhancedMetadata);
@@ -236,7 +316,9 @@ describe("PngMetadataEmbedder", () => {
 
     it("should pass verification for valid checksum", async () => {
       const metadata = embedder.createMetadataFromResult(
-        { statistics: { pixelsDifferent: 0, totalPixels: 100, percentageDifferent: 0 } } as ComparisonResult,
+        {
+          statistics: { pixelsDifferent: 0, totalPixels: 100, percentageDifferent: 0 },
+        } as ComparisonResult,
         "a.png",
         "b.png"
       );
@@ -298,7 +380,7 @@ describe("PngMetadataEmbedder", () => {
             imageMagickVersion: "7.1.2",
           },
           executionTime: { duration: 2500 },
-        } as any,
+        } as EnhancedMetadata,
         checksum: "abcd1234",
       };
 

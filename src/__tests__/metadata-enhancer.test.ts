@@ -28,7 +28,20 @@ describe("MetadataEnhancer", () => {
     mockOs.platform.mockReturnValue("darwin");
     mockOs.release.mockReturnValue("23.0.0");
     mockOs.arch.mockReturnValue("arm64");
-    mockOs.cpus.mockReturnValue(new Array(8).fill({} as os.CpuInfo));
+    const cpuInfoArray: os.CpuInfo[] = Array(8)
+      .fill(null)
+      .map(() => ({
+        model: "Apple M1",
+        speed: 2400,
+        times: {
+          user: 0,
+          nice: 0,
+          sys: 0,
+          idle: 0,
+          irq: 0,
+        },
+      }));
+    mockOs.cpus.mockReturnValue(cpuInfoArray);
     mockOs.totalmem.mockReturnValue(16 * 1024 * 1024 * 1024); // 16GB
     mockOs.freemem.mockReturnValue(8 * 1024 * 1024 * 1024); // 8GB
     mockOs.hostname.mockReturnValue("test-machine");
@@ -41,7 +54,7 @@ describe("MetadataEnhancer", () => {
   describe("collectMetadata", () => {
     it("should collect basic environment metadata when not in git repo", async () => {
       // Mock git check to fail
-      (execAsync as any).mockRejectedValueOnce(new Error("Not a git repository"));
+      execAsync.mockRejectedValueOnce(new Error("Not a git repository"));
 
       const metadata = await enhancer.collectMetadata("test-command", ["arg1", "arg2"]);
 
@@ -72,7 +85,7 @@ describe("MetadataEnhancer", () => {
       ];
 
       mockGitResponses.forEach((response) => {
-        (execAsync as any).mockResolvedValueOnce(response);
+        execAsync.mockResolvedValueOnce(response);
       });
 
       const metadata = await enhancer.collectMetadata();
@@ -94,7 +107,7 @@ describe("MetadataEnhancer", () => {
 
     it("should handle partial git data gracefully", async () => {
       // Mock git repo exists but some commands fail
-      (execAsync as any)
+      execAsync
         .mockResolvedValueOnce({ stdout: "/path/to/.git\n" }) // git rev-parse --git-dir
         .mockResolvedValueOnce({ stdout: "abc123\n" }) // git rev-parse HEAD
         .mockRejectedValueOnce(new Error("No branch")) // git rev-parse --abbrev-ref HEAD
@@ -109,7 +122,7 @@ describe("MetadataEnhancer", () => {
 
     it("should collect system tools versions", async () => {
       // Mock tool version commands
-      (execAsync as any)
+      execAsync
         .mockRejectedValueOnce(new Error("Not a git repo")) // git check
         .mockResolvedValueOnce({ stdout: "10.2.3\n" }) // npm --version
         .mockResolvedValueOnce({ stdout: "user123\n" }) // whoami
@@ -126,7 +139,7 @@ describe("MetadataEnhancer", () => {
 
     it("should use environment variables as fallback", async () => {
       // Mock all exec calls to fail
-      (execAsync as any).mockRejectedValue(new Error("Command failed"));
+      execAsync.mockRejectedValue(new Error("Command failed"));
 
       // Set environment variables
       process.env.USER = "envuser";
@@ -145,7 +158,7 @@ describe("MetadataEnhancer", () => {
 
   describe("markComplete", () => {
     it("should calculate execution duration", async () => {
-      (execAsync as any).mockRejectedValue(new Error("Not a git repo"));
+      execAsync.mockRejectedValue(new Error("Not a git repo"));
 
       const metadata = await enhancer.collectMetadata();
 
@@ -251,7 +264,7 @@ describe("MetadataEnhancer", () => {
   describe("formatDuration", () => {
     it("should format durations correctly", () => {
       const enhancer = new MetadataEnhancer();
-      
+
       // Access private method via any type
       const formatDuration = (enhancer as any).formatDuration.bind(enhancer);
 
@@ -265,7 +278,7 @@ describe("MetadataEnhancer", () => {
   describe("formatBytes", () => {
     it("should format bytes correctly", () => {
       const enhancer = new MetadataEnhancer();
-      
+
       // Access private method via any type
       const formatBytes = (enhancer as any).formatBytes.bind(enhancer);
 
