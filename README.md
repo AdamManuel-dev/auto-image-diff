@@ -3,7 +3,7 @@
 <div align="center">
   
   ![auto-image-diff Logo](https://img.shields.io/badge/auto--image--diff-v0.1.0-blue.svg)
-  [![Build Status](https://img.shields.io/github/workflow/status/yourusername/auto-image-diff/CI)](https://github.com/yourusername/auto-image-diff/actions)
+  [![Build Status](https://img.shields.io/github/workflow/status/adammanuel-dev/auto-image-diff/CI)](https://github.com/adammanuel-dev/auto-image-diff/actions)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
   [![Node](https://img.shields.io/badge/node-14+-green.svg)](https://nodejs.org/)
