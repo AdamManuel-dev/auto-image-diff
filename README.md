@@ -32,6 +32,7 @@ auto-image-diff uses ImageMagick's powerful image processing capabilities to:
 - 🔧 **CI/CD Ready**: Easy integration with GitHub Actions, Jenkins, etc.
 - ⚡ **Fast**: Leverages ImageMagick's optimized C++ implementation
 - 📝 **TypeScript**: Fully typed for better developer experience
+- 🏃 **Alias Support**: Use `aid` as a shorter alias for `auto-image-diff`
 
 ### ✨ Advanced Features
 
@@ -78,21 +79,23 @@ npm install -g auto-image-diff
 ```bash
 # Compare two images (align + diff in one command)
 auto-image-diff compare screenshot1.png screenshot2.png output-dir/
+# or use the shorter alias:
+aid compare screenshot1.png screenshot2.png output-dir/
 
 # Just align images
-auto-image-diff align reference.png target.png aligned.png
+aid align reference.png target.png aligned.png
 
 # Just generate diff (for pre-aligned images)
-auto-image-diff diff image1.png image2.png diff.png
+aid diff image1.png image2.png diff.png
 
 # Batch processing
-auto-image-diff batch reference-dir/ target-dir/ output-dir/
+aid batch reference-dir/ target-dir/ output-dir/
 
 # Read embedded metadata
-auto-image-diff read-metadata diff-image.png
+aid read-metadata diff-image.png
 
 # Progressive refinement (interactive)
-auto-image-diff refine before.png after.png --output-dir refinement/
+aid refine before.png after.png refinement/
 ```
 
 ### Options
@@ -105,43 +108,63 @@ auto-image-diff refine before.png after.png --output-dir refinement/
 
 - `-c, --color <color>`: Highlight color for differences (default: "red")
 - `--no-lowlight`: Disable lowlighting of unchanged areas
-- `--classify`: Enable smart classification of changes
-- `--suggest-css`: Generate CSS fix suggestions
-- `--css-selector <selector>`: CSS selector for fix suggestions
-- `--embed-metadata`: Embed metadata in output PNG
+- `-e, --exclude <regions>`: Path to exclusions.json file defining regions to ignore
+- `-s, --smart`: Run smart classification on differences
+- `--smart-diff`: Generate detailed smart diff report with classifications
+- `-f, --focus <types>`: Focus on specific change types (comma-separated: content,style,layout,size,structural)
+- `--suggest-css`: Generate CSS fix suggestions for style and layout changes
+- `--css-selector <selector>`: CSS selector to use in fix suggestions
+- `--embed-metadata`: Embed comparison metadata into PNG output
 
 **compare command:**
 
 - `-t, --threshold <threshold>`: Difference threshold percentage (default: "0.1")
 - `-c, --color <color>`: Highlight color for differences (default: "red")
-- `--exclusions <file>`: Path to exclusions JSON file
-- `--classify`: Enable smart classification
-- `--embed-metadata`: Embed metadata in output
+- `-e, --exclude <regions>`: Path to exclusions.json file defining regions to ignore
+- `-s, --smart`: Run smart classification on differences
 
 **batch command:**
 
-- `-p, --pattern <pattern>`: File pattern to match (default: "*.png")
-- `-r, --recursive`: Scan directories recursively
-- `-t, --threshold <threshold>`: Difference threshold percentage
-- `--parallel`: Enable parallel processing
-- `--concurrency <n>`: Number of parallel workers
-- `--smart-pairing`: Use fuzzy file matching
-- `--generate-summary`: Create HTML summary report
+- `-p, --pattern <pattern>`: File pattern to match (default: "\*.png")
+- `-r, --recursive`: Scan directories recursively (default: true)
+- `-t, --threshold <threshold>`: Difference threshold percentage (default: "0.1")
+- `--no-parallel`: Disable parallel processing
+- `-c, --concurrency <workers>`: Number of parallel workers (default: 4)
+- `-e, --exclude <regions>`: Path to exclusions.json file defining regions to ignore
+- `-s, --smart`: Run smart classification on differences
+- `--smart-pairing`: Use smart file pairing algorithm for fuzzy matching
+
+**refine command:**
+
+- `-e, --exclude <regions>`: Path to existing exclusions.json file
+- `--auto`: Automatically apply high-confidence suggestions
+- `--exclude-types <types>`: Comma-separated types to auto-exclude (content,style,layout,size,structural)
+- `--target <percent>`: Target difference percentage (default: "0.5")
+- `--max-iterations <n>`: Maximum refinement iterations (default: "5")
 
 ### Examples
 
 ```bash
 # Basic comparison with default settings
-auto-image-diff compare before.png after.png results/
+aid compare before.png after.png results/
 
 # Set a higher threshold for differences (1%)
-auto-image-diff compare before.png after.png results/ -t 1.0
+aid compare before.png after.png results/ -t 1.0
 
 # Use blue highlights for differences
-auto-image-diff diff before.png after.png diff.png -c blue
+aid diff before.png after.png diff.png -c blue
 
 # Align images using phase correlation method
-auto-image-diff align reference.png test.png aligned.png -m phase
+aid align reference.png test.png aligned.png -m phase
+
+# Smart diff with classification and CSS suggestions
+aid diff before.png after.png diff.png --smart-diff --suggest-css
+
+# Batch processing with smart features
+aid batch baseline/ current/ results/ -s --smart-pairing
+
+# Progressive refinement with auto-exclusion
+aid refine before.png after.png refinement/ --auto --exclude-types content,style
 ```
 
 ### Output
@@ -151,6 +174,12 @@ The `compare` command creates a directory with:
 - `aligned.png` - The aligned version of the target image
 - `diff.png` - Visual diff highlighting the changes
 - `report.json` - Detailed comparison statistics
+
+The `diff` command with `--smart-diff` creates additional outputs:
+
+- `diff-smart-report.json` - Detailed classification report
+- `diff-smart-report.html` - Interactive HTML report with visualizations
+- `diff-fixes.css` - CSS suggestions when using `--suggest-css`
 
 Example `report.json`:
 
@@ -170,6 +199,41 @@ Example `report.json`:
   "timestamp": "2025-08-01T04:00:00.000Z"
 }
 ```
+
+### Exclusion Regions
+
+You can define regions to ignore in comparisons using an `exclusions.json` file:
+
+```json
+{
+  "regions": [
+    {
+      "name": "timestamp",
+      "bounds": { "x": 10, "y": 10, "width": 200, "height": 30 },
+      "reason": "Dynamic timestamp that changes every render"
+    },
+    {
+      "name": "user-avatar",
+      "bounds": { "x": 500, "y": 50, "width": 50, "height": 50 },
+      "reason": "User avatars may vary"
+    }
+  ]
+}
+```
+
+### Smart Classification
+
+When using the `--smart` or `--smart-diff` flags, auto-image-diff categorizes detected changes into:
+
+- **content**: Text, images, or data changes
+- **style**: Colors, fonts, borders, or visual styling changes
+- **layout**: Position, spacing, or arrangement changes
+- **size**: Dimension or scaling changes
+- **structural**: DOM structure modifications
+- **new_element**: Newly added UI elements
+- **removed_element**: Deleted UI elements
+
+Each classification includes a confidence score (0-1) to help prioritize review efforts.
 
 ## 🔧 Advanced Usage
 
@@ -363,17 +427,29 @@ npm run dev
 
 ## 🚀 Roadmap
 
-- [x] Add support for batch processing multiple image pairs ✅
-- [x] Implement smart exclusion regions (ignore timestamps, etc.) ✅
-- [x] Interactive before/after slider in reports ✅
-- [x] Smart classification of change types ✅
-- [x] CSS fix suggestions for style changes ✅
-- [x] Progressive refinement mode ✅
-- [x] PNG metadata embedding ✅
+### ✅ Completed (v1.0.0)
+
+- [x] Smart image alignment using multiple methods
+- [x] Batch processing with parallel execution
+- [x] Smart exclusion regions (ignore timestamps, etc.)
+- [x] Interactive HTML reports with before/after sliders
+- [x] Smart classification of change types
+- [x] CSS fix suggestions for style changes
+- [x] Progressive refinement mode
+- [x] PNG metadata embedding
+- [x] Smart file pairing for fuzzy matching
+- [x] Comprehensive test coverage (51%+)
+
+### 📋 Planned Features
+
 - [ ] Add support for different image formats (WebP, AVIF)
 - [ ] Create web-based UI for visual comparisons
 - [ ] Add machine learning-based alignment for complex UIs
 - [ ] Support for responsive design testing at multiple breakpoints
+- [ ] Visual regression baseline management
+- [ ] Cloud storage integration (S3, GCS)
+- [ ] Slack/Teams notifications for CI/CD pipelines
+- [ ] Performance optimizations for large images
 
 ## 📄 License
 
