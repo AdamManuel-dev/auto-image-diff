@@ -47,3 +47,19 @@ tmp/
 temp/
 *.swp
 *~
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+requirements.txt
+
+# Shell scripts
+*.sh
+fix-lint.sh
+
+# Logs
+*-log.md
+lint-fixing-log.md
+type-fixing-log.md
