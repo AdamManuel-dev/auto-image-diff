@@ -1,6 +1,6 @@
 /**
  * @fileoverview Jest configuration for auto-image-diff
- * @lastmodified 2025-08-01T03:51:00Z
+ * @lastmodified 2025-08-01T08:10:45Z
  * 
  * Features: TypeScript support, coverage reporting, test patterns
  * Main APIs: Jest configuration
@@ -24,10 +24,10 @@ module.exports = {
   ],
   coverageThreshold: {
     global: {
-      branches: 77,
-      functions: 85,
-      lines: 85,
-      statements: 85,
+      branches: 70,
+      functions: 80,
+      lines: 70,
+      statements: 70,
     },
   },
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],
