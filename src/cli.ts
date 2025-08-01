@@ -65,12 +65,13 @@ program
   .option("-c, --color <color>", "Highlight color for differences", "red")
   .option("--no-lowlight", "Disable lowlighting of unchanged areas")
   .option("-e, --exclude <regions>", "Path to exclusions.json file defining regions to ignore")
+  .option("-s, --smart", "Run smart classification on differences")
   .action(
     async (
       image1: string,
       image2: string,
       output: string,
-      options: { color: string; lowlight: boolean; exclude?: string }
+      options: { color: string; lowlight: boolean; exclude?: string; smart?: boolean }
     ) => {
       try {
         console.log("Generating visual diff...");
@@ -92,6 +93,7 @@ program
           highlightColor: options.color,
           lowlight: options.lowlight,
           exclusions,
+          runClassification: options.smart,
         });
 
         console.log(`✅ Diff image saved to: ${output}`);
@@ -102,6 +104,30 @@ program
           `   - Percentage different: ${result.statistics.percentageDifferent.toFixed(2)}%`
         );
         console.log(`   - Images are ${result.isEqual ? "equal" : "different"}`);
+        
+        // Output classification results if available
+        if (result.classification) {
+          console.log(`\n🔍 Classification Results:`);
+          console.log(`   - Analyzed regions: ${result.classification.totalRegions}`);
+          console.log(`   - Classified: ${result.classification.classifiedRegions}`);
+          
+          // Show breakdown by type
+          const byType = result.classification.byType;
+          const typeBreakdown = Object.entries(byType)
+            .filter(([_, count]) => count > 0)
+            .map(([type, count]) => `${type}: ${count}`)
+            .join(", ");
+          
+          if (typeBreakdown) {
+            console.log(`   - Types: ${typeBreakdown}`);
+          }
+          
+          console.log(
+            `   - Confidence: min=${result.classification.confidence.min.toFixed(2)}, ` +
+            `avg=${result.classification.confidence.avg.toFixed(2)}, ` +
+            `max=${result.classification.confidence.max.toFixed(2)}`
+          );
+        }
       } catch (error) {
         console.error(
           "❌ Error generating diff:",
@@ -121,12 +147,13 @@ program
   .option("-t, --threshold <threshold>", "Difference threshold percentage", "0.1")
   .option("-c, --color <color>", "Highlight color for differences", "red")
   .option("-e, --exclude <regions>", "Path to exclusions.json file defining regions to ignore")
+  .option("-s, --smart", "Run smart classification on differences")
   .action(
     async (
       reference: string,
       target: string,
       outputDir: string,
-      options: { threshold: string; color: string; exclude?: string }
+      options: { threshold: string; color: string; exclude?: string; smart?: boolean }
     ) => {
       try {
         // Ensure output directory exists
@@ -158,6 +185,7 @@ program
         const result = await imageProcessor.generateDiff(reference, alignedPath, diffPath, {
           highlightColor: options.color,
           exclusions,
+          runClassification: options.smart,
         });
 
         // Save comparison report
@@ -174,6 +202,7 @@ program
               isEqual: result.isEqual,
               threshold: parseFloat(options.threshold),
               timestamp: new Date().toISOString(),
+              classification: result.classification,
             },
             null,
             2
@@ -208,6 +237,7 @@ program
   .option("-t, --threshold <threshold>", "Difference threshold percentage", "0.1")
   .option("--no-parallel", "Disable parallel processing")
   .option("-e, --exclude <regions>", "Path to exclusions.json file defining regions to ignore")
+  .option("-s, --smart", "Run smart classification on differences")
   .action(
     async (
       referenceDir: string,
@@ -219,6 +249,7 @@ program
         threshold: string;
         parallel: boolean;
         exclude?: string;
+        smart?: boolean;
       }
     ) => {
       try {
@@ -247,6 +278,7 @@ program
           threshold: parseFloat(options.threshold),
           parallel: options.parallel,
           exclusions,
+          runClassification: options.smart,
         });
 
         console.log("\n✅ Batch processing complete!");

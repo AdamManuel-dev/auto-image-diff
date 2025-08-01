@@ -15,7 +15,14 @@ export * from "./layout";
 export * from "./size";
 export * from "./structural";
 
-import { ClassifierRegistry, DifferenceType } from "./base";
+import { 
+  ClassifierRegistry, 
+  DifferenceType, 
+  DifferenceClassifier,
+  DifferenceRegion,
+  AnalysisContext,
+  ClassificationResult
+} from "./base";
 import { ContentClassifier } from "./content";
 import { StyleClassifier } from "./style";
 import { LayoutClassifier } from "./layout";

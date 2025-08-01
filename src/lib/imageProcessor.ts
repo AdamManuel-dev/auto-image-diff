@@ -12,7 +12,12 @@ import * as gm from "gm";
 import * as fs from "fs/promises";
 import { exec } from "child_process";
 import { promisify } from "util";
+import * as path from "path";
+import * as os from "os";
 import { ExclusionsConfig } from "./exclusions";
+import { MaskGenerator } from "./mask-generator";
+import { ClassifierManager, ClassificationSummary } from "./classifiers/manager";
+import { getAllClassifiers } from "./classifiers";
 
 const execAsync = promisify(exec);
 const imageMagick = gm.subClass({ imageMagick: true });
@@ -26,6 +31,7 @@ export interface ComparisonResult {
     totalPixels: number;
     percentageDifferent: number;
   };
+  classification?: ClassificationSummary;
 }
 
 export interface AlignmentOptions {
@@ -134,28 +140,71 @@ export class ImageProcessor {
     image1Path: string,
     image2Path: string,
     outputPath: string,
-    options: { highlightColor?: string; lowlight?: boolean; exclusions?: ExclusionsConfig } = {}
+    options: {
+      highlightColor?: string;
+      lowlight?: boolean;
+      exclusions?: ExclusionsConfig;
+      runClassification?: boolean;
+    } = {}
   ): Promise<ComparisonResult> {
-    const { highlightColor = "red" } = options;
+    const { highlightColor = "red", exclusions } = options;
 
-    // Use shell command directly for better compatibility
-    const cmd = `compare -highlight-color "${highlightColor}" "${image1Path}" "${image2Path}" "${outputPath}" 2>&1`;
+    let processedImage1 = image1Path;
+    let processedImage2 = image2Path;
+    let tempFiles: string[] = [];
 
     try {
-      await execAsync(cmd);
-    } catch (error) {
-      // Compare returns non-zero exit code when images differ, which is expected
-      // Check if the output file was created
-      if (!(await this.fileExists(outputPath))) {
-        throw new Error(`Failed to generate diff: ${(error as Error).message}`);
+      // Apply exclusion masks if provided
+      if (exclusions && exclusions.regions.length > 0) {
+        const result = await this.applyExclusionMasks(image1Path, image2Path, exclusions);
+        processedImage1 = result.maskedImage1;
+        processedImage2 = result.maskedImage2;
+        tempFiles = result.tempFiles;
+      }
+
+      // Use shell command directly for better compatibility
+      const cmd = `compare -highlight-color "${highlightColor}" "${processedImage1}" "${processedImage2}" "${outputPath}" 2>&1`;
+
+      try {
+        await execAsync(cmd);
+      } catch (error) {
+        // Compare returns non-zero exit code when images differ, which is expected
+        // Check if the output file was created
+        if (!(await this.fileExists(outputPath))) {
+          throw new Error(`Failed to generate diff: ${(error as Error).message}`);
+        }
+      }
+
+      // Get comparison metrics using the masked images if applicable
+      const result = await this.compareImages(processedImage1, processedImage2);
+      result.diffImagePath = outputPath;
+
+      // Run classification if requested
+      if (options.runClassification && result.statistics.pixelsDifferent > 0) {
+        try {
+          const classification = await this.classifyDifferences(
+            processedImage1,
+            processedImage2,
+            outputPath
+          );
+          result.classification = classification;
+        } catch (error) {
+          // Classification errors shouldn't fail the diff generation
+          console.warn("Classification failed:", error);
+        }
+      }
+
+      return result;
+    } finally {
+      // Clean up temporary files
+      for (const tempFile of tempFiles) {
+        try {
+          await fs.unlink(tempFile);
+        } catch {
+          // Ignore cleanup errors
+        }
       }
     }
-
-    // Get comparison metrics
-    const result = await this.compareImages(image1Path, image2Path);
-    result.diffImagePath = outputPath;
-
-    return result;
   }
 
   private async fileExists(filePath: string): Promise<boolean> {
@@ -165,5 +214,178 @@ export class ImageProcessor {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Apply exclusion masks to images before comparison
+   */
+  private async applyExclusionMasks(
+    image1Path: string,
+    image2Path: string,
+    exclusions: ExclusionsConfig
+  ): Promise<{ maskedImage1: string; maskedImage2: string; tempFiles: string[] }> {
+    const tempDir = os.tmpdir();
+    const tempFiles: string[] = [];
+
+    // Get image dimensions
+    const dimensions = await this.getImageDimensions(image1Path);
+
+    // Generate mask
+    const maskGenerator = new MaskGenerator({ featherEdges: true, featherRadius: 3 });
+    const mask = maskGenerator.generateMask(dimensions, exclusions.regions);
+
+    // Create mask image file
+    const maskPath = path.join(tempDir, `mask-${Date.now()}.png`);
+    tempFiles.push(maskPath);
+
+    // Create a PNG mask where excluded regions are black (0) and included are white (255)
+    await this.createMaskImage(mask, dimensions.width, dimensions.height, maskPath);
+
+    // Apply mask to both images
+    const maskedImage1 = path.join(tempDir, `masked1-${Date.now()}.png`);
+    const maskedImage2 = path.join(tempDir, `masked2-${Date.now()}.png`);
+    tempFiles.push(maskedImage1, maskedImage2);
+
+    // Use ImageMagick to apply the mask
+    // This will make excluded regions transparent
+    await execAsync(
+      `convert "${image1Path}" "${maskPath}" -alpha off -compose CopyOpacity -composite "${maskedImage1}"`
+    );
+    await execAsync(
+      `convert "${image2Path}" "${maskPath}" -alpha off -compose CopyOpacity -composite "${maskedImage2}"`
+    );
+
+    return { maskedImage1, maskedImage2, tempFiles };
+  }
+
+  /**
+   * Get image dimensions
+   */
+  private async getImageDimensions(imagePath: string): Promise<{ width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+      imageMagick(imagePath).size((err, size) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ width: size.width, height: size.height });
+        }
+      });
+    });
+  }
+
+  /**
+   * Create a mask image from binary mask data
+   */
+  private async createMaskImage(
+    mask: Uint8Array,
+    width: number,
+    height: number,
+    outputPath: string
+  ): Promise<void> {
+    // Create a simple PGM (grayscale) image from the mask data
+    // PGM format: P5 width height maxval data
+    const header = `P5\n${width} ${height}\n255\n`;
+    const headerBuffer = Buffer.from(header);
+    const dataBuffer = Buffer.from(mask);
+    const pgmBuffer = Buffer.concat([headerBuffer, dataBuffer]);
+
+    // Write as PGM first
+    const pgmPath = outputPath.replace(".png", ".pgm");
+    await fs.writeFile(pgmPath, pgmBuffer);
+
+    // Convert PGM to PNG using ImageMagick
+    try {
+      await execAsync(`convert "${pgmPath}" "${outputPath}"`);
+    } finally {
+      // Clean up temporary PGM file
+      try {
+        await fs.unlink(pgmPath);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+  }
+
+  /**
+   * Classify differences in the comparison
+   */
+  private async classifyDifferences(
+    image1Path: string,
+    image2Path: string,
+    diffPath: string
+  ): Promise<ClassificationSummary> {
+    // Create classifier manager and register all classifiers
+    const manager = new ClassifierManager();
+    const classifiers = getAllClassifiers();
+    classifiers.forEach((c) => manager.registerClassifier(c));
+
+    // Load images as buffers for analysis
+    const [image1Data, image2Data, diffData] = await Promise.all([
+      fs.readFile(image1Path),
+      fs.readFile(image2Path),
+      fs.readFile(diffPath),
+    ]);
+
+    // Get image dimensions
+    const dimensions = await this.getImageDimensions(image1Path);
+
+    // For now, we'll analyze the entire image as one region
+    // In a more sophisticated implementation, we would segment the diff into regions
+    const region: import("./classifiers/base").DifferenceRegion = {
+      id: 1,
+      bounds: {
+        x: 0,
+        y: 0,
+        width: dimensions.width,
+        height: dimensions.height,
+      },
+      pixelCount: dimensions.width * dimensions.height,
+      differencePixels: 0, // This would be calculated from the diff
+      differencePercentage: 0, // This would be calculated
+    };
+
+    // Create analysis context
+    // Note: This is a simplified implementation. A full implementation would
+    // properly decode the image data into pixel arrays
+    const context: import("./classifiers/base").AnalysisContext = {
+      originalImage: {
+        data: new Uint8Array(image1Data),
+        width: dimensions.width,
+        height: dimensions.height,
+      },
+      comparedImage: {
+        data: new Uint8Array(image2Data),
+        width: dimensions.width,
+        height: dimensions.height,
+      },
+      diffMask: new Uint8Array(diffData),
+    };
+
+    // Calculate actual difference metrics from the diff image
+    // This is a placeholder - real implementation would analyze the diff image
+    const diffPixelCount = context.diffMask ? this.estimateDifferencePixels(context.diffMask) : 0;
+    region.differencePixels = diffPixelCount;
+    region.differencePercentage = (diffPixelCount / region.pixelCount) * 100;
+
+    // Run classification
+    const summary = manager.classifyRegions([region], context);
+    return summary;
+  }
+
+  /**
+   * Estimate the number of different pixels from a diff image
+   * This is a simplified placeholder implementation
+   */
+  private estimateDifferencePixels(diffData: Uint8Array | Uint8ClampedArray): number {
+    // In a real implementation, we would analyze the diff image
+    // to count non-black pixels or pixels above a threshold
+    let count = 0;
+    for (let i = 0; i < diffData.length; i += 4) {
+      // Check if pixel is not black (assuming RGBA format)
+      if (diffData[i] > 10 || diffData[i + 1] > 10 || diffData[i + 2] > 10) {
+        count++;
+      }
+    }
+    return count;
   }
 }

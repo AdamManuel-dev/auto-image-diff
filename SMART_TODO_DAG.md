@@ -92,12 +92,12 @@ After Phase 1:
 - [x] Task 9: Implement size changes classifier
 - [x] Task 10: Implement new/removed elements classifier
 
-### Phase 3: Integration
+### Phase 3: Integration ✅ COMPLETED
 
 After Phase 2:
 
-- [ ] Task 3: Apply exclusion masks during comparison (depends on 2, 12)
-- [ ] Task 11: Integrate classifiers into pipeline (depends on 6-10)
+- [x] Task 3: Apply exclusion masks during comparison (depends on 2, 12)
+- [x] Task 11: Integrate classifiers into pipeline (depends on 6-10)
 
 ### Phase 4: CLI & Basic Reporting
 

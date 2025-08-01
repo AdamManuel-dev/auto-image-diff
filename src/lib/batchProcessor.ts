@@ -21,6 +21,7 @@ export interface BatchOptions {
   parallel?: boolean;
   maxConcurrency?: number;
   exclusions?: ExclusionsConfig;
+  runClassification?: boolean;
 }
 
 export interface BatchResult {
@@ -100,7 +101,12 @@ export class BatchProcessor {
           pair.reference,
           alignedPath,
           diffPath,
-          { highlightColor: "red", lowlight: true }
+          {
+            highlightColor: "red",
+            lowlight: true,
+            exclusions: options.exclusions,
+            runClassification: options.runClassification,
+          }
         );
 
         results.results.push({
