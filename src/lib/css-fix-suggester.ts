@@ -135,13 +135,12 @@ export class CssFixSuggester {
   ): FixSuggestion | null {
     const selector = context?.selector || `.${context?.element || "element"}`;
 
-    // Simple heuristic: if edges have high variance, likely border change
-    const hasEdgeChange = changes.some((c) => {
-      // Check if changes are concentrated near edges
-      return c.region && (c.region.width < 10 || c.region.height < 10);
+    // Simple heuristic: if changes have style type with high confidence
+    const hasStyleChange = changes.some((c) => {
+      return c.type === DifferenceType.STYLE && c.confidence > 0.6;
     });
 
-    if (!hasEdgeChange) return null;
+    if (!hasStyleChange) return null;
 
     return {
       type: "other",

@@ -19,6 +19,7 @@ import { MaskGenerator } from "./mask-generator";
 import { ClassifierManager, ClassificationSummary } from "./classifiers/manager";
 import { getAllClassifiers } from "./classifiers";
 import { CssFixSuggester, FixSuggestion } from "./css-fix-suggester";
+import { PngMetadataEmbedder } from "./png-metadata";
 
 const execAsync = promisify(exec);
 const imageMagick = gm.subClass({ imageMagick: true });
@@ -149,6 +150,7 @@ export class ImageProcessor {
       runClassification?: boolean;
       suggestCssFixes?: boolean;
       cssSelector?: string;
+      embedMetadata?: boolean;
     } = {}
   ): Promise<ComparisonResult> {
     const { highlightColor = "red", exclusions } = options;
@@ -207,6 +209,22 @@ export class ImageProcessor {
         } catch (error) {
           // Classification errors shouldn't fail the diff generation
           console.warn("Classification failed:", error);
+        }
+      }
+
+      // Embed metadata into PNG if requested
+      if (options.embedMetadata && outputPath.toLowerCase().endsWith(".png")) {
+        try {
+          const embedder = new PngMetadataEmbedder();
+          const metadata = embedder.createMetadataFromResult(
+            result,
+            image1Path,
+            image2Path,
+            result.classification
+          );
+          await embedder.embedMetadata(outputPath, metadata);
+        } catch (error) {
+          console.warn("Failed to embed metadata:", error);
         }
       }
 

@@ -13,6 +13,7 @@ import * as path from "path";
 import { ImageProcessor, ComparisonResult } from "./imageProcessor";
 import { ExclusionsConfig } from "./exclusions";
 import { SmartPairing } from "./smart-pairing";
+import { BatchSummaryGenerator } from "./batch-summary-generator";
 
 export interface BatchOptions {
   pattern?: string;
@@ -97,6 +98,7 @@ export class BatchProcessor {
           inProgress.add(nextPromise);
           return nextPromise;
         }
+        return;
       });
       inProgress.add(promise);
     }
@@ -116,6 +118,7 @@ export class BatchProcessor {
     targetDir: string,
     options: BatchOptions
   ): Promise<BatchResult> {
+    const startTime = new Date();
     const referenceFiles = await this.scanDirectory(
       referenceDir,
       options.pattern,
@@ -148,6 +151,7 @@ export class BatchProcessor {
     if (options.parallel !== false && options.maxConcurrency && options.maxConcurrency > 1) {
       // Parallel processing
       const concurrency = options.maxConcurrency || 4;
+      // eslint-disable-next-line no-console
       console.log(`🚀 Processing ${pairs.length} image pairs with ${concurrency} workers...`);
 
       // Process in chunks
@@ -279,7 +283,18 @@ export class BatchProcessor {
     }
 
     // Generate batch report
-    await this.generateBatchReport(results, options.outputDir);
+    const endTime = new Date();
+    await this.generateBatchReport(results, {
+      outputDir: options.outputDir,
+      referenceDir,
+      targetDir,
+      startTime,
+      endTime,
+      parallelConfig: {
+        enabled: options.parallel !== false,
+        workers: options.maxConcurrency || 4,
+      },
+    });
 
     return results;
   }
@@ -391,6 +406,7 @@ export class BatchProcessor {
     // Log pairing report
     const unpaired = smartPairing.findUnpairedFiles(referenceFiles, targetFiles, smartPairs);
     const report = smartPairing.generatePairingReport(smartPairs, unpaired);
+    // eslint-disable-next-line no-console
     console.log("\n" + report + "\n");
 
     return smartPairs.map((pair) => ({
@@ -401,48 +417,45 @@ export class BatchProcessor {
   }
 
   /**
-   * Aggregate classifications across all results
-   */
-  private aggregateClassifications(results: BatchResult): {
-    totalRegions: number;
-    byType: Record<string, number>;
-    avgConfidence: number;
-  } {
-    const allClassifications = results.results
-      .filter((r) => r.result?.classification)
-      .flatMap((r) => {
-        // TypeScript already knows these are defined from the filter above
-        const classification = r.result?.classification;
-        return classification ? classification.regions : [];
-      });
-
-    const byType: Record<string, number> = {};
-    let totalConfidence = 0;
-
-    for (const region of allClassifications) {
-      const type = region.classification.type;
-      byType[type] = (byType[type] || 0) + 1;
-      totalConfidence += region.classification.confidence;
-    }
-
-    return {
-      totalRegions: allClassifications.length,
-      byType,
-      avgConfidence:
-        allClassifications.length > 0 ? totalConfidence / allClassifications.length : 0,
-    };
-  }
-
-  /**
    * Generate HTML report for batch results
    */
-  private async generateBatchReport(results: BatchResult, outputDir: string): Promise<void> {
-    const reportPath = path.join(outputDir, "batch-report.json");
-    const htmlReportPath = path.join(outputDir, "index.html");
+  private async generateBatchReport(
+    results: BatchResult,
+    config: {
+      outputDir: string;
+      referenceDir: string;
+      targetDir: string;
+      startTime: Date;
+      endTime: Date;
+      parallelConfig: { enabled: boolean; workers: number };
+    }
+  ): Promise<void> {
+    const reportPath = path.join(config.outputDir, "batch-report.json");
+    const htmlReportPath = path.join(config.outputDir, "index.html");
+    const summaryReportPath = path.join(config.outputDir, "batch-summary.html");
+
+    // Generate comprehensive summary data
+    const summaryGenerator = new BatchSummaryGenerator({
+      title: "Image Comparison Batch Summary",
+      includeCharts: true,
+      includeDetails: true,
+    });
+
+    const summaryData = summaryGenerator.generateSummary(results, {
+      referenceDir: config.referenceDir,
+      targetDir: config.targetDir,
+      startTime: config.startTime,
+      endTime: config.endTime,
+      parallelConfig: config.parallelConfig,
+    });
 
     // Enhanced report with regions
     const enhancedResults = {
       ...results,
+      metadata: summaryData.metadata,
+      overview: summaryData.overview,
+      classification: summaryData.classification,
+      performance: summaryData.performance,
       allRegions: results.results
         .filter((r) => r.result?.classification)
         .flatMap((r) => {
@@ -459,15 +472,21 @@ export class BatchProcessor {
             },
           }));
         }),
-      classificationSummary: this.aggregateClassifications(results),
     };
 
     // Save JSON report
     await fs.writeFile(reportPath, JSON.stringify(enhancedResults, null, 2), "utf-8");
 
-    // Generate HTML report
-    const html = this.generateHtmlReport(results, outputDir);
+    // Generate basic HTML report (existing)
+    const html = this.generateHtmlReport(results, config.outputDir);
     await fs.writeFile(htmlReportPath, html, "utf-8");
+
+    // Generate comprehensive summary report
+    const summaryHtml = summaryGenerator.generateHtmlReport(summaryData);
+    await fs.writeFile(summaryReportPath, summaryHtml, "utf-8");
+
+    // eslint-disable-next-line no-console
+    console.log(`\n📊 Batch summary report saved to: ${summaryReportPath}`);
   }
 
   /**
