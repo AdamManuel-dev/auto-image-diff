@@ -1,0 +1,34 @@
+{
+  "name": "auto-image-diff",
+  "version": "0.1.0",
+  "description": "auto-image-diff is a powerful command-line tool that automatically aligns UI screenshots and generates visual difference reports. It solves the common problem of false positives in visual regression testing caused by minor positioning differences between screenshots.",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AdamManuel-dev/auto-image-diff.git"
+  },
+  "keywords": [
+    "image-diff",
+    "visual-regression",
+    "testing",
+    "automation"
+  ],
+  "author": "Adam Manuel",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AdamManuel-dev/auto-image-diff/issues"
+  },
+  "homepage": "https://github.com/AdamManuel-dev/auto-image-diff#readme",
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
