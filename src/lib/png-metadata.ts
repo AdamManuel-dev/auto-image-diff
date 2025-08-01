@@ -12,6 +12,7 @@ import * as fs from "fs/promises";
 import * as crypto from "crypto";
 import { ComparisonResult } from "./imageProcessor";
 import { ClassificationSummary } from "./classifiers/manager";
+import { EnhancedMetadata } from "./metadata-enhancer";
 
 interface PngChunk {
   type: string;
@@ -21,6 +22,7 @@ interface PngChunk {
 export interface EmbeddedMetadata {
   version: string;
   timestamp: string;
+  enhanced?: EnhancedMetadata;
   comparison: {
     source: {
       image1: string;
@@ -147,11 +149,13 @@ export class PngMetadataEmbedder {
     result: ComparisonResult,
     image1Path: string,
     image2Path: string,
-    classification?: ClassificationSummary
+    classification?: ClassificationSummary,
+    enhancedMetadata?: EnhancedMetadata
   ): EmbeddedMetadata {
     const metadata: EmbeddedMetadata = {
-      version: "1.0",
+      version: "1.1",
       timestamp: new Date().toISOString(),
+      enhanced: enhancedMetadata,
       comparison: {
         source: {
           image1: image1Path,
@@ -415,6 +419,45 @@ export class PngMetadataEmbedder {
       }
     }
 
+    // Enhanced metadata section
+    if (metadata.enhanced) {
+      lines.push("");
+      lines.push("Enhanced Metadata:");
+      lines.push("-----------------");
+
+      if (metadata.enhanced.git) {
+        const git = metadata.enhanced.git;
+        lines.push(`Git Commit: ${git.commit?.substring(0, 8) || "N/A"}`);
+        lines.push(`Git Branch: ${git.branch || "N/A"}`);
+        lines.push(`Git Status: ${git.isDirty ? "Modified" : "Clean"}`);
+      }
+
+      if (metadata.enhanced.environment) {
+        const env = metadata.enhanced.environment;
+        lines.push(`Platform: ${env.platform} ${env.arch}`);
+        lines.push(`Node Version: ${env.nodeVersion}`);
+        lines.push(`ImageMagick: ${env.imageMagickVersion || "N/A"}`);
+      }
+
+      if (metadata.enhanced.executionTime) {
+        const exec = metadata.enhanced.executionTime;
+        if (exec.duration) {
+          lines.push(`Execution Time: ${this.formatDuration(exec.duration)}`);
+        }
+      }
+    }
+
     return lines.join("\n");
+  }
+
+  /**
+   * Format duration in human-readable format
+   */
+  private formatDuration(ms: number): string {
+    if (ms < 1000) return `${ms}ms`;
+    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+    const minutes = Math.floor(ms / 60000);
+    const seconds = ((ms % 60000) / 1000).toFixed(0);
+    return `${minutes}m ${seconds}s`;
   }
 }

@@ -20,6 +20,7 @@ import { ClassifierManager, ClassificationSummary } from "./classifiers/manager"
 import { getAllClassifiers } from "./classifiers";
 import { CssFixSuggester, FixSuggestion } from "./css-fix-suggester";
 import { PngMetadataEmbedder } from "./png-metadata";
+import { MetadataEnhancer } from "./metadata-enhancer";
 
 const execAsync = promisify(exec);
 const imageMagick = gm.subClass({ imageMagick: true });
@@ -43,6 +44,12 @@ export interface AlignmentOptions {
 }
 
 export class ImageProcessor {
+  private metadataEnhancer: MetadataEnhancer;
+
+  constructor() {
+    this.metadataEnhancer = new MetadataEnhancer();
+  }
+
   /**
    * Align two images using ImageMagick's subimage search
    */
@@ -216,11 +223,24 @@ export class ImageProcessor {
       if (options.embedMetadata && outputPath.toLowerCase().endsWith(".png")) {
         try {
           const embedder = new PngMetadataEmbedder();
+
+          // Collect enhanced metadata
+          const enhancedMetadata = await this.metadataEnhancer.collectMetadata("auto-image-diff", [
+            "diff",
+            image1Path,
+            image2Path,
+            outputPath,
+          ]);
+
+          // Mark as complete
+          this.metadataEnhancer.markComplete(enhancedMetadata);
+
           const metadata = embedder.createMetadataFromResult(
             result,
             image1Path,
             image2Path,
-            result.classification
+            result.classification,
+            enhancedMetadata
           );
           await embedder.embedMetadata(outputPath, metadata);
         } catch (error) {
