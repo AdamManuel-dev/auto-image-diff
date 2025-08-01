@@ -15,6 +15,7 @@ import * as path from "path";
 import { ImageProcessor } from "./lib/imageProcessor";
 import { BatchProcessor } from "./lib/batchProcessor";
 import * as fs from "fs/promises";
+import { parseExclusionFile } from "./lib/exclusions";
 
 const program = new Command();
 const imageProcessor = new ImageProcessor();
@@ -63,18 +64,34 @@ program
   .argument("<output>", "Output path for diff image")
   .option("-c, --color <color>", "Highlight color for differences", "red")
   .option("--no-lowlight", "Disable lowlighting of unchanged areas")
+  .option("-e, --exclude <regions>", "Path to exclusions.json file defining regions to ignore")
   .action(
     async (
       image1: string,
       image2: string,
       output: string,
-      options: { color: string; lowlight: boolean }
+      options: { color: string; lowlight: boolean; exclude?: string }
     ) => {
       try {
         console.log("Generating visual diff...");
+        
+        // Load exclusions if provided
+        let exclusions;
+        if (options.exclude) {
+          try {
+            const exclusionContent = await fs.readFile(options.exclude, "utf-8");
+            exclusions = parseExclusionFile(exclusionContent);
+            console.log(`✓ Loaded ${exclusions.regions.length} exclusion regions`);
+          } catch (err) {
+            console.error(`❌ Error loading exclusions file: ${err instanceof Error ? err.message : String(err)}`);
+            process.exit(1);
+          }
+        }
+        
         const result = await imageProcessor.generateDiff(image1, image2, output, {
           highlightColor: options.color,
           lowlight: options.lowlight,
+          exclusions,
         });
 
         console.log(`✅ Diff image saved to: ${output}`);
@@ -103,16 +120,30 @@ program
   .argument("<output-dir>", "Output directory for results")
   .option("-t, --threshold <threshold>", "Difference threshold percentage", "0.1")
   .option("-c, --color <color>", "Highlight color for differences", "red")
+  .option("-e, --exclude <regions>", "Path to exclusions.json file defining regions to ignore")
   .action(
     async (
       reference: string,
       target: string,
       outputDir: string,
-      options: { threshold: string; color: string }
+      options: { threshold: string; color: string; exclude?: string }
     ) => {
       try {
         // Ensure output directory exists
         await fs.mkdir(outputDir, { recursive: true });
+
+        // Load exclusions if provided
+        let exclusions;
+        if (options.exclude) {
+          try {
+            const exclusionContent = await fs.readFile(options.exclude, "utf-8");
+            exclusions = parseExclusionFile(exclusionContent);
+            console.log(`✓ Loaded ${exclusions.regions.length} exclusion regions`);
+          } catch (err) {
+            console.error(`❌ Error loading exclusions file: ${err instanceof Error ? err.message : String(err)}`);
+            process.exit(1);
+          }
+        }
 
         const alignedPath = path.join(outputDir, "aligned.png");
         const diffPath = path.join(outputDir, "diff.png");
@@ -126,6 +157,7 @@ program
         console.log("Step 2/2: Generating diff...");
         const result = await imageProcessor.generateDiff(reference, alignedPath, diffPath, {
           highlightColor: options.color,
+          exclusions,
         });
 
         // Save comparison report
@@ -175,6 +207,7 @@ program
   .option("-r, --recursive", "Scan directories recursively", true)
   .option("-t, --threshold <threshold>", "Difference threshold percentage", "0.1")
   .option("--no-parallel", "Disable parallel processing")
+  .option("-e, --exclude <regions>", "Path to exclusions.json file defining regions to ignore")
   .action(
     async (
       referenceDir: string,
@@ -185,6 +218,7 @@ program
         recursive: boolean;
         threshold: string;
         parallel: boolean;
+        exclude?: string;
       }
     ) => {
       try {
@@ -193,12 +227,26 @@ program
         console.log(`Target directory: ${targetDir}`);
         console.log(`Output directory: ${outputDir}`);
 
+        // Load exclusions if provided
+        let exclusions;
+        if (options.exclude) {
+          try {
+            const exclusionContent = await fs.readFile(options.exclude, "utf-8");
+            exclusions = parseExclusionFile(exclusionContent);
+            console.log(`✓ Loaded ${exclusions.regions.length} exclusion regions`);
+          } catch (err) {
+            console.error(`❌ Error loading exclusions file: ${err instanceof Error ? err.message : String(err)}`);
+            process.exit(1);
+          }
+        }
+
         const result = await batchProcessor.processBatch(referenceDir, targetDir, {
           pattern: options.pattern,
           recursive: options.recursive,
           outputDir,
           threshold: parseFloat(options.threshold),
           parallel: options.parallel,
+          exclusions,
         });
 
         console.log("\n✅ Batch processing complete!");

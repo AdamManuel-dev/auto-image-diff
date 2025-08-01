@@ -118,6 +118,8 @@ export class ClassifierManager {
       [DifferenceType.LAYOUT]: 0,
       [DifferenceType.SIZE]: 0,
       [DifferenceType.STRUCTURAL]: 0,
+      [DifferenceType.NEW_ELEMENT]: 0,
+      [DifferenceType.REMOVED_ELEMENT]: 0,
       [DifferenceType.UNKNOWN]: 0,
     };
 

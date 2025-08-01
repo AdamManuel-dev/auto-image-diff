@@ -11,6 +11,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import { ImageProcessor, ComparisonResult } from "./imageProcessor";
+import { ExclusionsConfig } from "./exclusions";
 
 export interface BatchOptions {
   pattern?: string;
@@ -19,6 +20,7 @@ export interface BatchOptions {
   threshold?: number;
   parallel?: boolean;
   maxConcurrency?: number;
+  exclusions?: ExclusionsConfig;
 }
 
 export interface BatchResult {

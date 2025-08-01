@@ -12,6 +12,7 @@ import * as gm from "gm";
 import * as fs from "fs/promises";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { ExclusionsConfig } from "./exclusions";
 
 const execAsync = promisify(exec);
 const imageMagick = gm.subClass({ imageMagick: true });
@@ -133,7 +134,7 @@ export class ImageProcessor {
     image1Path: string,
     image2Path: string,
     outputPath: string,
-    options: { highlightColor?: string; lowlight?: boolean } = {}
+    options: { highlightColor?: string; lowlight?: boolean; exclusions?: ExclusionsConfig } = {}
   ): Promise<ComparisonResult> {
     const { highlightColor = "red" } = options;
 

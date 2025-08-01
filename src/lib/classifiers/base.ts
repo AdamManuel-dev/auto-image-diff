@@ -14,6 +14,8 @@ export enum DifferenceType {
   LAYOUT = 'layout',
   SIZE = 'size',
   STRUCTURAL = 'structural',
+  NEW_ELEMENT = 'new_element',
+  REMOVED_ELEMENT = 'removed_element',
   UNKNOWN = 'unknown',
 }
 
@@ -222,5 +224,32 @@ export abstract class DifferenceClassifier {
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     return { dx, dy, distance };
+  }
+}
+
+/**
+ * Registry for all available classifiers
+ */
+export class ClassifierRegistry {
+  private static classifiers = new Map<DifferenceType, typeof DifferenceClassifier>();
+
+  static register(type: DifferenceType, classifier: typeof DifferenceClassifier): void {
+    this.classifiers.set(type, classifier);
+  }
+
+  static get(type: DifferenceType): typeof DifferenceClassifier | undefined {
+    return this.classifiers.get(type);
+  }
+
+  static getAll(): Map<DifferenceType, typeof DifferenceClassifier> {
+    return new Map(this.classifiers);
+  }
+
+  static create(type: DifferenceType, options?: Record<string, unknown>): DifferenceClassifier | null {
+    const ClassifierClass = this.classifiers.get(type);
+    if (!ClassifierClass) return null;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+    return new (ClassifierClass as any)(options);
   }
 }
