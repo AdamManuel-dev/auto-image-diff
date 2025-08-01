@@ -1,206 +1,156 @@
-# PromptOptima TODO List
+# auto-image-diff TODO List
 
-## Phase 1: Foundation Setup (Weeks 1-2)
+## Phase 1: Foundation Setup ✅ COMPLETED
 
-### Infrastructure & Environment
-- [ ] 1.1.1 Set up development environment
-- [ ] 1.1.2 Initialize Git repository and CI/CD pipeline
-- [ ] 1.1.3 Configure environment configs (dev/staging/prod)
-- [ ] 1.3.1 Set up Express.js server foundation
-- [ ] 1.3.4 Configure OpenTelemetry for monitoring
+- [x] Set up initial project structure
+- [x] Initialize Git repository
+- [x] Create basic documentation structure
+- [x] Set up TypeScript and Jest testing framework
+- [x] Fix .gitignore to properly track src/lib directory
 
-### Database Setup
-- [ ] 1.2.1 Set up PostgreSQL database
-- [ ] 1.2.2 Set up Redis cache
-- [ ] 1.2.3 Set up Vector database (Weaviate/Qdrant)
+## Phase 2: Core Module Development ✅ COMPLETED
 
-### 🔴 CRITICAL: Data Architecture Foundation
-- [ ] 2.3.1 Design data models with versioning strategy <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-- [ ] Create database schema with soft deletes and audit trails <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-- [ ] Implement migration framework for zero-downtime updates <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-- [ ] Design vector storage schema with dimension flexibility <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
+### 2.1 ImageMagick Integration (Replaced OpenCV/SIFT/ORB)
 
-## Phase 2: Core Analysis Engine (Weeks 3-4)
+- [x] Install and configure ImageMagick bindings
+- [x] Implement subimage search for alignment
+- [x] Create feature matching using ImageMagick compare
+- [x] Add comparison metrics and statistics
+- [x] Handle alignment with offset detection
 
-### 🔴 CRITICAL PATH 1: Analysis Engine Core
-- [ ] 2.1.3 **Pattern Recognition Engine** (SENIOR DEV REQUIRED) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Select and integrate embedding model (OpenAI Ada-2 vs Sentence-BERT) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Implement vector index architecture (HNSW/IVF) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Create pattern clustering system <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Build model versioning system <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Performance test with 10K+ patterns
+### 2.2 Image Alignment Module ✅ COMPLETED
 
-- [ ] 2.1.4 **Multi-dimensional Analysis Framework** (SENIOR DEV REQUIRED) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Design weight calculation system with context awareness <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Implement analyzers for speed, tokens, and accuracy <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Create aggregation pipeline with validation <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Build confidence calculator with penalties <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Ensure extensibility for new dimensions
+- [x] Implement alignment using ImageMagick subimage search
+- [x] Add support for different alignment methods
+- [x] Create alignment validation through comparison
+- [x] Handle edge cases with fallback to direct copy
+- [x] Generate alignment quality metrics
 
-### Basic Analysis Components
-- [ ] 2.1.1 Implement tokenization module
-- [ ] 2.1.2 Create basic scoring algorithm
-- [ ] 6.2.1 Add cost tracking module
+### 2.3 Visual Diff Module ✅ COMPLETED
 
-## Phase 3: Claude API Integration (Weeks 5-6)
+- [x] Integrate ImageMagick compare for diff generation
+- [x] Implement diff generation with configurable threshold
+- [x] Create visual diff output with customizable highlight colors
+- [x] Add diff statistics (pixels changed, percentage)
+- [x] Generate JSON comparison reports
 
-### 🔴 CRITICAL PATH 2: Claude API Integration
-- [ ] 2.2.1 **Claude API Proxy** (SENIOR DEV REQUIRED) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Implement circuit breaker pattern <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Create request queuing with backpressure handling <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Design latency budget (50ms total overhead) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Add comprehensive error handling <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Build abstraction layer for vendor flexibility
+## Phase 3: CLI Interface Development ✅ COMPLETED
 
-- [ ] 2.2.3 **Request/Response Interceptors** (SENIOR DEV REQUIRED) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Implement security interceptor (first in chain) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Create validation interceptor <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Add rate limiting interceptor <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Build analysis interceptor for data collection <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Implement cache interceptor
-  - [ ] Ensure parallel processing for non-critical paths
+### 3.1 Command Structure ✅ COMPLETED
 
-### API Foundation
-- [ ] 4.1.1 Create REST API structure
-- [ ] 4.1.2 Implement authentication endpoints
-- [ ] 4.1.3 Add prompt analysis endpoints
-- [ ] 4.2.1 Design webhook schema
+- [x] Set up commander.js for CLI parsing
+- [x] Implement `align` command with method options
+- [x] Implement `diff` command with color customization
+- [x] Implement `compare` command (align + diff combo)
+- [x] Add global options (--threshold, --color, --method)
 
-## Phase 4: Optimization Engine (Weeks 7-8)
+### 3.2 Input/Output Handling ✅ COMPLETED
 
-### 🔴 CRITICAL PATH 3: Optimization Engine
-- [ ] 3.1.1 **DSPy Integration** (EXPERT REQUIRED) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Pin DSPy version and create compatibility tests <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Implement sandbox isolation for optimization runs <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Create resource management with limits <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Build strategy abstraction (MIPROv2, Bootstrap, Custom) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Add comprehensive validation layer
+- [x] Support multiple image formats through ImageMagick
+- [x] Implement batch processing for directories ✅ COMPLETED
+- [x] Add progress indicators for long operations ✅ COMPLETED
+- [x] Create structured output formats (JSON)
+- [x] Handle errors gracefully with helpful messages
 
-- [ ] 3.1.4 **Optimization Confidence Scoring** (EXPERT REQUIRED) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Design confidence factors framework <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Implement weighted calculation with penalties <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Create calibration system (±5% accuracy) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Build explanation generator <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Set maximum confidence bounds (95%)
+## Phase 4: Quality & Release Preparation
 
-### Optimization Features
-- [ ] 3.1.2 Create optimization strategies
-- [ ] 3.1.3 Implement A/B testing framework
-- [ ] 3.2.1 Build batch optimization system
+### 4.1 Testing & Coverage
 
-## Phase 5: Vector Storage & ML Features (Week 8)
+- [x] Unit tests for ImageProcessor module
+- [x] Unit tests for CLI commands (mocked)
+- [ ] Integration tests with real images
+- [x] Basic test coverage implemented (>50%)
+- [ ] ❗ Re-enable strict test coverage thresholds (80%) in jest.config.js
+- [ ] Improve test coverage to >80% for all metrics
+- [ ] Create test fixture library (UI patterns)
 
-### 🔴 CRITICAL PATH 4: Vector Embedding Storage
-- [ ] 2.3.4 **Vector Embedding Storage** (SENIOR DEV REQUIRED) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Implement primary storage with Weaviate/Qdrant <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Set up PostgreSQL + pgvector backup <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Create Redis cache layer for hot vectors <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Build version management system <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Implement model upgrade adapters <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-  - [ ] Design tiered storage (hot/warm/cold)
+### 4.2 Code Quality
 
-### Pattern & Template Libraries
-- [ ] 5.1.1 Create pattern library structure
-- [ ] 5.1.2 Implement pattern categorization
-- [ ] 5.2.1 Build prompt template storage
-- [ ] 5.2.2 Add template versioning
+- [x] Set up ESLint configuration ✅ COMPLETED
+- [x] Fix all linting issues ✅ COMPLETED
+- [x] Add pre-commit hooks ✅ COMPLETED (husky + lint-staged)
+- [x] Run security audit (npm audit) ✅ COMPLETED - 0 vulnerabilities
+- [x] Add TypeScript strict mode checks ✅ COMPLETED
 
-## Phase 6: Frontend Development (Weeks 7-9, Parallel)
+## Phase 5: CI/CD & Documentation
 
-### UI Foundation
-- [ ] 7.1.1 Set up React with TypeScript
-- [ ] 7.1.2 Integrate Material Design System
-- [ ] 7.1.3 Implement responsive framework
+### 5.1 CI/CD Setup
 
-### Core Views
-- [ ] 7.2.1 Create dashboard view
-- [ ] 7.2.2 Build prompt analysis view
-- [ ] 7.2.3 Implement optimization results view
-- [ ] 7.2.4 Add analytics dashboard
+- [ ] Create GitHub Actions workflow
+- [ ] Add automated testing on PR
+- [ ] Add automated builds
+- [ ] Set up npm publish workflow
+- [ ] Add badge status to README
 
-## Phase 7: Security & Performance (Weeks 9-10)
+### 5.2 Documentation
 
-### Security Implementation
-- [ ] 8.1.1 Implement JWT authentication
-- [ ] 8.1.2 Add API key management
-- [ ] 8.1.3 Create rate limiting per user/tier
-- [ ] 8.2.1 Set up data encryption
-- [ ] 8.2.2 Implement audit logging
+- [x] Basic README with usage examples
+- [ ] API documentation with TypeDoc
+- [ ] Create CONTRIBUTING.md
+- [ ] Add CHANGELOG.md
+- [ ] Create GitHub wiki for advanced usage
 
-### Performance Testing
-- [ ] 9.2.1 Create load testing suite
-- [ ] 9.2.2 Implement performance benchmarks
-- [ ] 9.2.3 Optimize critical paths
-- [ ] Test system with 1M+ vectors
+## Phase 6: Advanced Features (v1.1+)
 
-## Phase 8: Integration & Testing (Weeks 10-11)
+### 6.1 Batch Processing ✅ COMPLETED
 
-### Testing Framework
-- [ ] 9.1.1 Set up unit test framework
-- [ ] 9.1.2 Create integration tests
-- [ ] 9.1.3 Implement E2E test suite
-- [ ] Generate comprehensive test data
+- [x] Implement directory scanning ✅ COMPLETED
+- [x] Add glob pattern support ✅ COMPLETED
+- [x] Create batch comparison reports ✅ COMPLETED
+- [x] Add parallel processing option ✅ COMPLETED
+- [x] Progress bars for batch operations ✅ COMPLETED
 
-### Integration Features
-- [ ] 4.3.1 Build Claude API integration
-- [ ] 4.3.2 Add third-party API support
-- [ ] 4.2.2 Implement webhook delivery system
+### 6.2 Smart Features
 
-## Phase 9: Documentation & Deployment (Weeks 11-12)
+- [ ] Exclusion regions configuration
+- [ ] Dynamic content detection
+- [ ] Adaptive thresholding
+- [ ] ML-based alignment improvements
+- [ ] Cross-browser normalization
 
-### Documentation
-- [ ] 10.1.1 Generate API documentation
-- [ ] 10.1.2 Create integration guides
-- [ ] 10.1.3 Write user documentation
-- [ ] Document all critical paths
+### 6.3 Output Enhancements
 
-### Deployment
-- [ ] 10.2.1 Set up AWS infrastructure
-- [ ] 10.2.2 Configure auto-scaling
-- [ ] 10.2.3 Implement blue-green deployment
-- [ ] 10.2.4 Set up monitoring and alerts
+- [x] HTML report generation ✅ COMPLETED (batch mode)
+- [ ] Side-by-side comparison view
+- [ ] Animated diff transitions
+- [ ] PDF report export
+- [ ] Integration with test frameworks
 
-## Phase 10: Polish & Optimization (Week 12)
+## Critical Milestones
 
-### Final Optimizations
-- [ ] Performance tune all critical paths
-- [ ] Optimize database queries
-- [ ] Review and optimize vector searches
-- [ ] Conduct security audit
+### Week 1: MVP Release (v0.1.0) ✅ COMPLETED
 
-### Launch Preparation
-- [ ] Run full system tests
-- [ ] Prepare rollback procedures
-- [ ] Create operational runbooks
-- [ ] Train support team
+- [x] Core functionality working
+- [x] Basic CLI interface
+- [x] ImageMagick integration
+- [x] Initial documentation
 
-## Critical Milestones & Decision Points
+### Week 2: Quality & Polish (Current)
 
-### Week 2 Checkpoint
-- [ ] ❗ DECISION: Finalize data schema (cannot change easily) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-- [ ] Validate all database designs
-- [ ] Confirm vector storage approach
+- [ ] Test coverage >80%
+- [x] ESLint integration ✅ COMPLETED
+- [ ] CI/CD pipeline
+- [ ] npm package ready
 
-### Week 4 Checkpoint
-- [ ] ❗ DECISION: Lock embedding model choice (affects all ML) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-- [ ] Validate pattern recognition accuracy
-- [ ] Confirm analysis framework performance
+### Week 3: First Public Release (v1.0.0)
 
-### Week 6 Checkpoint
-- [ ] ❗ DECISION: Confirm optimization strategies (core value) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-- [ ] Validate Claude proxy performance (<50ms overhead)
-- [ ] Test interceptor chain efficiency
+- [ ] Published to npm
+- [ ] GitHub Actions examples
+- [ ] Complete documentation
+- [ ] Marketing/announcement
 
-### Week 8 Checkpoint
-- [ ] ❗ DECISION: Performance benchmarks met? (go/no-go) <think>This is a critical task that needs to work properly. I need to take my time here, and methodically determine the best path forward</think>
-- [ ] <10ms pattern matching achieved?
-- [ ] 40% optimization improvement demonstrated?
-- [ ] Confidence scoring calibrated to ±5%?
+## Success Metrics
+
+- [x] Basic alignment working with ImageMagick
+- [x] Diff generation functional
+- [ ] <5 seconds processing time for 1920x1080 images
+- [ ] > 80% test coverage
+- [ ] Zero npm audit vulnerabilities
+- [ ] <1% false positive rate in real-world testing
 
 ## Notes
 
-- 🔴 Indicates CRITICAL PATH items that block other features
-- Items marked (SENIOR DEV REQUIRED) need experienced developers
-- Items marked (EXPERT REQUIRED) need specialized expertise
-- Parallel work opportunities are indicated in phase headers
-- All critical paths should have dedicated senior developers
+- 🔴 Focus on reliability and testing before adding features
+- 📦 Prepare for npm publish with proper package.json setup
+- 🚀 Get MVP out quickly, iterate based on feedback
+- 📊 Track performance metrics for optimization

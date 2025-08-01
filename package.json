@@ -2,12 +2,30 @@
   "name": "auto-image-diff",
   "version": "0.1.0",
   "description": "auto-image-diff is a powerful command-line tool that automatically aligns UI screenshots and generates visual difference reports. It solves the common problem of false positives in visual regression testing caused by minor positioning differences between screenshots.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "bin": {
+    "auto-image-diff": "./dist/cli.js",
+    "aid": "./dist/cli.js"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "ts-node",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "typecheck": "tsc --noEmit"
+    "test": "NODE_OPTIONS='--max-old-space-size=4096' jest",
+    "test:watch": "NODE_OPTIONS='--max-old-space-size=4096' jest --watch",
+    "test:coverage": "NODE_OPTIONS='--max-old-space-size=4096' jest --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   },
   "repository": {
     "type": "git",
@@ -27,8 +45,30 @@
   },
   "homepage": "https://github.com/AdamManuel-dev/auto-image-diff#readme",
   "devDependencies": {
+    "@jest/globals": "^30.0.5",
+    "@types/gm": "^1.25.4",
+    "@types/imagemagick": "^0.0.35",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.1.0",
+    "@types/pixelmatch": "^5.2.6",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.3",
+    "husky": "^9.1.7",
+    "jest": "^30.0.5",
+    "lint-staged": "^16.1.2",
+    "prettier": "^3.6.2",
+    "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "commander": "^14.0.0",
+    "gm": "^1.25.1",
+    "imagemagick": "^0.1.3",
+    "pixelmatch": "^7.1.0",
+    "sharp": "^0.34.3"
   }
 }
