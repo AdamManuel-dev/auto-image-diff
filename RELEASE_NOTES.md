@@ -93,7 +93,7 @@ Successfully implemented comprehensive test coverage for all image difference cl
 
 ### Classifier Test Coverage
 
-```
+```text
 Overall Coverage:
 - Statements: 98.31%
 - Branches: 92.64%

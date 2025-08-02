@@ -1,0 +1,187 @@
+{
+  "totalFiles": 3,
+  "processed": 3,
+  "failed": 0,
+  "results": [
+    {
+      "reference": "/Users/adammanuel/Projects/auto-image-diff/examples/screenshots/baseline/blue.png",
+      "target": "/Users/adammanuel/Projects/auto-image-diff/examples/screenshots/current/blue.png",
+      "result": {
+        "difference": 52,
+        "isEqual": false,
+        "statistics": {
+          "pixelsDifferent": 1300,
+          "totalPixels": 2500,
+          "percentageDifferent": 52
+        },
+        "diffImagePath": "/Users/adammanuel/Projects/auto-image-diff/examples/output/batch-results/blue_diff.png",
+        "classification": {
+          "totalRegions": 1,
+          "classifiedRegions": 0,
+          "unclassifiedRegions": 1,
+          "byType": {
+            "content": 0,
+            "style": 0,
+            "layout": 0,
+            "size": 0,
+            "structural": 0,
+            "new_element": 0,
+            "removed_element": 0,
+            "unknown": 1
+          },
+          "regions": [
+            {
+              "region": {
+                "id": 1,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 50,
+                  "height": 50
+                },
+                "pixelCount": 2500,
+                "differencePixels": 84,
+                "differencePercentage": 3.36
+              },
+              "classification": {
+                "type": "unknown",
+                "confidence": 0,
+                "details": {
+                  "reason": "No classifier matched with sufficient confidence"
+                }
+              },
+              "classifier": "none"
+            }
+          ],
+          "confidence": {
+            "min": 0,
+            "max": 0,
+            "avg": 0
+          }
+        }
+      }
+    },
+    {
+      "reference": "/Users/adammanuel/Projects/auto-image-diff/examples/screenshots/baseline/green.png",
+      "target": "/Users/adammanuel/Projects/auto-image-diff/examples/screenshots/current/green.png",
+      "result": {
+        "difference": 9.120000000000001,
+        "isEqual": false,
+        "statistics": {
+          "pixelsDifferent": 228,
+          "totalPixels": 2500,
+          "percentageDifferent": 9.120000000000001
+        },
+        "diffImagePath": "/Users/adammanuel/Projects/auto-image-diff/examples/output/batch-results/green_diff.png",
+        "classification": {
+          "totalRegions": 1,
+          "classifiedRegions": 0,
+          "unclassifiedRegions": 1,
+          "byType": {
+            "content": 0,
+            "style": 0,
+            "layout": 0,
+            "size": 0,
+            "structural": 0,
+            "new_element": 0,
+            "removed_element": 0,
+            "unknown": 1
+          },
+          "regions": [
+            {
+              "region": {
+                "id": 1,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 50,
+                  "height": 50
+                },
+                "pixelCount": 2500,
+                "differencePixels": 85,
+                "differencePercentage": 3.4000000000000004
+              },
+              "classification": {
+                "type": "unknown",
+                "confidence": 0,
+                "details": {
+                  "reason": "No classifier matched with sufficient confidence"
+                }
+              },
+              "classifier": "none"
+            }
+          ],
+          "confidence": {
+            "min": 0,
+            "max": 0,
+            "avg": 0
+          }
+        }
+      }
+    },
+    {
+      "reference": "/Users/adammanuel/Projects/auto-image-diff/examples/screenshots/baseline/red.png",
+      "target": "/Users/adammanuel/Projects/auto-image-diff/examples/screenshots/current/red.png",
+      "result": {
+        "difference": 52,
+        "isEqual": false,
+        "statistics": {
+          "pixelsDifferent": 1300,
+          "totalPixels": 2500,
+          "percentageDifferent": 52
+        },
+        "diffImagePath": "/Users/adammanuel/Projects/auto-image-diff/examples/output/batch-results/red_diff.png",
+        "classification": {
+          "totalRegions": 1,
+          "classifiedRegions": 0,
+          "unclassifiedRegions": 1,
+          "byType": {
+            "content": 0,
+            "style": 0,
+            "layout": 0,
+            "size": 0,
+            "structural": 0,
+            "new_element": 0,
+            "removed_element": 0,
+            "unknown": 1
+          },
+          "regions": [
+            {
+              "region": {
+                "id": 1,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 50,
+                  "height": 50
+                },
+                "pixelCount": 2500,
+                "differencePixels": 84,
+                "differencePercentage": 3.36
+              },
+              "classification": {
+                "type": "unknown",
+                "confidence": 0,
+                "details": {
+                  "reason": "No classifier matched with sufficient confidence"
+                }
+              },
+              "classifier": "none"
+            }
+          ],
+          "confidence": {
+            "min": 0,
+            "max": 0,
+            "avg": 0
+          }
+        }
+      }
+    }
+  ],
+  "summary": {
+    "averageDifference": 37.70666666666667,
+    "totalPixelsDifferent": 2828,
+    "matchingImages": 0,
+    "differentImages": 3
+  }
+}

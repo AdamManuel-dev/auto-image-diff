@@ -66,22 +66,21 @@ async function metadataTracking() {
     
     if (embeddedData) {
       console.log('✅ Successfully extracted metadata:');
-      console.log(`   Tool: ${embeddedData.tool}`);
       console.log(`   Version: ${embeddedData.version}`);
       console.log(`   Timestamp: ${embeddedData.timestamp}`);
       
       if (embeddedData.comparison) {
         console.log('\n📊 Comparison Details:');
-        console.log(`   Reference: ${path.basename(embeddedData.comparison.referenceImage)}`);
-        console.log(`   Target: ${path.basename(embeddedData.comparison.targetImage)}`);
+        console.log(`   Reference: ${path.basename(embeddedData.comparison.source.image1)}`);
+        console.log(`   Target: ${path.basename(embeddedData.comparison.source.image2)}`);
         console.log(`   Threshold: ${embeddedData.comparison.threshold}%`);
         console.log(`   Different: ${embeddedData.comparison.statistics.percentageDifferent.toFixed(2)}%`);
       }
       
-      if (embeddedData.git) {
+      if (embeddedData.enhanced?.git) {
         console.log('\n🔧 Embedded Git Info:');
-        console.log(`   Commit: ${embeddedData.git.commit}`);
-        console.log(`   Branch: ${embeddedData.git.branch}`);
+        console.log(`   Commit: ${embeddedData.enhanced.git.commit}`);
+        console.log(`   Branch: ${embeddedData.enhanced.git.branch}`);
       }
       
       // Save full metadata report

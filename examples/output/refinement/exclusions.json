@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "regions": [
+    {
+      "name": "auto-excluded-1754092392954-0",
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 100,
+        "height": 100
+      },
+      "reason": "Low confidence (0.0%) suggests this may be a false positive"
+    }
+  ]
+}

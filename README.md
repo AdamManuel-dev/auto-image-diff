@@ -167,6 +167,24 @@ aid batch baseline/ current/ results/ -s --smart-pairing
 aid refine before.png after.png refinement/ --auto --exclude-types content,style
 ```
 
+### Batch Processing
+
+The batch processing feature allows you to compare multiple images at once with parallel execution for maximum performance. It automatically generates comprehensive reports showing the comparison results for all image pairs.
+
+![Batch Report Summary](docs/batch-summary.png)
+_Interactive HTML summary showing processing overview, comparison results, and performance metrics_
+
+![Batch Report Details](docs/batch-report.png)
+_Detailed batch report showing individual file comparisons with difference percentages_
+
+Key features of batch processing:
+
+- 🚀 Parallel execution with configurable worker count
+- 📊 Smart file pairing with fuzzy matching
+- 📈 Comprehensive HTML and JSON reports
+- 🎯 Exclusion regions support
+- 📉 Performance metrics and throughput statistics
+
 ### Output
 
 The `compare` command creates a directory with:

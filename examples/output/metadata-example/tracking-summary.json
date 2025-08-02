@@ -1,0 +1,93 @@
+{
+  "executionId": "exec-1754092233873-3d1340x1v",
+  "timestamp": "2025-08-01T23:50:33.873Z",
+  "environment": {
+    "nodeVersion": "v22.18.0",
+    "platform": "darwin",
+    "platformRelease": "24.5.0",
+    "arch": "arm64",
+    "cpuCount": 8,
+    "totalMemory": "24.00 GB",
+    "freeMemory": "456.13 MB",
+    "hostname": "Mac.attlocal.net",
+    "cwd": "/Users/adammanuel/Projects/auto-image-diff",
+    "timestamp": "2025-08-01T23:50:33.534Z",
+    "timezone": "America/Chicago",
+    "npmVersion": "10.9.3",
+    "user": "adammanuel",
+    "imageMagickVersion": "7.1.2-0",
+    "locale": "en_US.UTF-8"
+  },
+  "git": {
+    "commit": "2dfde250b6efff3092273f355e761aaf7f1a8fb5",
+    "branch": "main",
+    "author": "Adam Manuel",
+    "authorEmail": "adam@manuel.dev",
+    "commitDate": "2025-08-01T18:36:53-05:00",
+    "commitMessage": "feat: add semantic-release and automated CI/CD pipeline",
+    "isDirty": true,
+    "uncommittedFiles": 14,
+    "ahead": 0,
+    "behind": 1,
+    "remoteUrl": "https://github.com/AdamManuel-dev/auto-image-diff.git"
+  },
+  "comparison": {
+    "files": {
+      "before": "/Users/adammanuel/Projects/auto-image-diff/examples/screenshots/feature-before.png",
+      "after": "/Users/adammanuel/Projects/auto-image-diff/examples/screenshots/feature-after.png"
+    },
+    "result": {
+      "pixelsDifferent": 213,
+      "totalPixels": 10000,
+      "percentageDifferent": 2.13
+    },
+    "classification": {
+      "totalRegions": 1,
+      "classifiedRegions": 0,
+      "unclassifiedRegions": 1,
+      "byType": {
+        "content": 0,
+        "style": 0,
+        "layout": 0,
+        "size": 0,
+        "structural": 0,
+        "new_element": 0,
+        "removed_element": 0,
+        "unknown": 1
+      },
+      "regions": [
+        {
+          "region": {
+            "id": 1,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 100,
+              "height": 100
+            },
+            "pixelCount": 10000,
+            "differencePixels": 95,
+            "differencePercentage": 0.95
+          },
+          "classification": {
+            "type": "unknown",
+            "confidence": 0,
+            "details": {
+              "reason": "No classifier matched with sufficient confidence"
+            }
+          },
+          "classifier": "none"
+        }
+      ],
+      "confidence": {
+        "min": 0,
+        "max": 0,
+        "avg": 0
+      }
+    }
+  },
+  "metadata": {
+    "embedded": true,
+    "extractable": true
+  }
+}

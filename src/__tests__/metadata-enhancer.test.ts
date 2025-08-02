@@ -3,15 +3,27 @@
  * @lastmodified 2025-08-01T23:00:00Z
  */
 
-import { MetadataEnhancer, EnhancedMetadata } from "../lib/metadata-enhancer";
-import { exec } from "child_process";
-import * as os from "os";
+// Define mockExecAsync before any imports
+const mockExecAsync = jest.fn();
+
+// Mock the promisified exec before importing
+jest.mock("util", () => ({
+  ...jest.requireActual("util"),
+  promisify: (fn: any) => {
+    // Use the function name to identify exec
+    if (fn && fn.name === "exec") {
+      return mockExecAsync;
+    }
+    return jest.requireActual("util").promisify(fn);
+  },
+}));
 
 jest.mock("child_process");
 jest.mock("os");
 
-// Mock the exec function properly
-const mockExec = exec as jest.MockedFunction<typeof exec>;
+import { MetadataEnhancer, EnhancedMetadata } from "../lib/metadata-enhancer";
+import * as os from "os";
+
 const mockOs = os as jest.Mocked<typeof os>;
 
 describe("MetadataEnhancer", () => {
@@ -20,6 +32,7 @@ describe("MetadataEnhancer", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockExecAsync.mockClear();
     jest.useFakeTimers();
     jest.setSystemTime(mockDate);
     enhancer = new MetadataEnhancer();
@@ -54,9 +67,11 @@ describe("MetadataEnhancer", () => {
   describe("collectMetadata", () => {
     it("should collect basic environment metadata when not in git repo", async () => {
       // Mock git check to fail
-      mockExec.mockImplementation((_command: string, callback: any) => {
-        process.nextTick(() => callback(new Error("Not a git repository")));
-        return {} as any;
+      mockExecAsync.mockImplementation((command: string) => {
+        if (command.includes("git rev-parse --git-dir")) {
+          return Promise.reject(new Error("Not a git repository"));
+        }
+        return Promise.reject(new Error("Command failed"));
       });
 
       const metadata = await enhancer.collectMetadata("test-command", ["arg1", "arg2"]);
@@ -70,34 +85,43 @@ describe("MetadataEnhancer", () => {
         command: "test-command",
         args: ["arg1", "arg2"],
       });
-    });
+    }, 30000);
 
     it("should collect git metadata when in repository", async () => {
-      // Mock successful git commands
-      const mockGitResponses = [
-        { stdout: "/path/to/.git\n" }, // git rev-parse --git-dir
-        { stdout: "abc123def456\n" }, // git rev-parse HEAD
-        { stdout: "main\n" }, // git rev-parse --abbrev-ref HEAD
-        { stdout: "John Doe\n" }, // git log -1 --format='%an'
-        { stdout: "john@example.com\n" }, // git log -1 --format='%ae'
-        { stdout: "2025-01-01T10:00:00Z\n" }, // git log -1 --format='%aI'
-        { stdout: "Initial commit\n" }, // git log -1 --format='%s'
-        { stdout: "M  src/file.ts\nA  new-file.js\n" }, // git status --porcelain
-        { stdout: "2\t3\n" }, // git rev-list --left-right --count
-        { stdout: "https://github.com/user/repo.git\n" }, // git config --get remote.origin.url
-      ];
-
-      let callCount = 0;
-      mockExec.mockImplementation((_command: string, callback: any) => {
-        const response = mockGitResponses[callCount++];
-        process.nextTick(() => {
-          if (response) {
-            callback(null, response.stdout, "");
-          } else {
-            callback(new Error("No more responses"));
-          }
-        });
-        return {} as any;
+      // Mock successful git commands based on command content
+      mockExecAsync.mockImplementation((command: string) => {
+        if (command.includes("git rev-parse --git-dir")) {
+          return Promise.resolve({ stdout: "/path/to/.git\n", stderr: "" });
+        } else if (command.includes("git rev-parse HEAD")) {
+          return Promise.resolve({ stdout: "abc123def456\n", stderr: "" });
+        } else if (command.includes("git rev-parse --abbrev-ref HEAD")) {
+          return Promise.resolve({ stdout: "main\n", stderr: "" });
+        } else if (command.includes("git log -1 --format='%an'")) {
+          return Promise.resolve({ stdout: "John Doe\n", stderr: "" });
+        } else if (command.includes("git log -1 --format='%ae'")) {
+          return Promise.resolve({ stdout: "john@example.com\n", stderr: "" });
+        } else if (command.includes("git log -1 --format='%aI'")) {
+          return Promise.resolve({ stdout: "2025-01-01T10:00:00Z\n", stderr: "" });
+        } else if (command.includes("git log -1 --format='%s'")) {
+          return Promise.resolve({ stdout: "Initial commit\n", stderr: "" });
+        } else if (command.includes("git status --porcelain")) {
+          return Promise.resolve({ stdout: "M  src/file.ts\nA  new-file.js\n", stderr: "" });
+        } else if (command.includes("git rev-list --left-right --count")) {
+          return Promise.resolve({ stdout: "2\t3\n", stderr: "" });
+        } else if (command.includes("git config --get remote.origin.url")) {
+          return Promise.resolve({ stdout: "https://github.com/user/repo.git\n", stderr: "" });
+        } else if (command.includes("npm --version")) {
+          return Promise.resolve({ stdout: "10.2.3\n", stderr: "" });
+        } else if (command === "whoami") {
+          return Promise.resolve({ stdout: "user123\n", stderr: "" });
+        } else if (command.includes("convert -version | head -n 1")) {
+          return Promise.resolve({
+            stdout: "Version: ImageMagick 7.1.2-0 Q16 x86_64 2024\n",
+            stderr: "",
+          });
+        } else {
+          return Promise.reject(new Error("Unexpected command: " + command));
+        }
       });
 
       const metadata = await enhancer.collectMetadata();
@@ -115,39 +139,45 @@ describe("MetadataEnhancer", () => {
         behind: 2,
         remoteUrl: "https://github.com/user/repo.git",
       });
-    });
+    }, 30000);
 
     it("should handle partial git data gracefully", async () => {
       // Mock git repo exists but some commands fail
-      // Commands handled in mockImplementation above
+      mockExecAsync.mockImplementation((command: string) => {
+        if (command.includes("git rev-parse --git-dir")) {
+          return Promise.resolve({ stdout: "/path/to/.git\n", stderr: "" });
+        } else if (command.includes("git rev-parse HEAD")) {
+          return Promise.resolve({ stdout: "abc123\n", stderr: "" });
+        } else {
+          return Promise.reject(new Error("Command failed"));
+        }
+      });
 
       const metadata = await enhancer.collectMetadata();
 
       expect(metadata.git).toEqual({
         commit: "abc123",
       });
-    });
+    }, 30000);
 
     it("should collect system tools versions", async () => {
-      // Mock tool version commands
-      let callCount = 0;
-      mockExec.mockImplementation((_command: string, callback: any) => {
-        if (callCount === 0) {
-          callCount++;
-          callback(new Error("Not a git repo")); // git check
-        } else if (callCount === 1) {
-          callCount++;
-          callback(null, "10.2.3\n", ""); // npm --version
-        } else if (callCount === 2) {
-          callCount++;
-          callback(null, "user123\n", ""); // whoami
-        } else if (callCount === 3) {
-          callCount++;
-          callback(null, "Version: ImageMagick 7.1.2-0 Q16 x86_64 2024\n", ""); // convert -version
+      // Mock tool version commands based on command content
+      // This handles parallel execution properly by routing based on command
+      mockExecAsync.mockImplementation((command: string) => {
+        if (command.includes("git rev-parse --git-dir")) {
+          return Promise.reject(new Error("Not a git repo"));
+        } else if (command.includes("npm --version")) {
+          return Promise.resolve({ stdout: "10.2.3\n", stderr: "" });
+        } else if (command === "whoami") {
+          return Promise.resolve({ stdout: "user123\n", stderr: "" });
+        } else if (command.includes("convert -version | head -n 1")) {
+          return Promise.resolve({
+            stdout: "Version: ImageMagick 7.1.2-0 Q16 x86_64 2024\n",
+            stderr: "",
+          });
         } else {
-          callback(new Error("Command failed"));
+          return Promise.reject(new Error("Command failed"));
         }
-        return {} as any;
       });
 
       const metadata = await enhancer.collectMetadata();
@@ -159,9 +189,8 @@ describe("MetadataEnhancer", () => {
 
     it("should use environment variables as fallback", async () => {
       // Mock all exec calls to fail
-      mockExec.mockImplementation((_command: string, callback: any) => {
-        callback(new Error("Command failed"));
-        return {} as any;
+      mockExecAsync.mockImplementation((_command: string) => {
+        return Promise.reject(new Error("Command failed"));
       });
 
       // Set environment variables
@@ -181,9 +210,8 @@ describe("MetadataEnhancer", () => {
 
   describe("markComplete", () => {
     it("should calculate execution duration", async () => {
-      mockExec.mockImplementation((_command: string, callback: any) => {
-        callback(new Error("Not a git repo"));
-        return {} as any;
+      mockExecAsync.mockImplementation((_command: string) => {
+        return Promise.reject(new Error("Not a git repo"));
       });
 
       const metadata = await enhancer.collectMetadata();

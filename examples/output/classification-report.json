@@ -1,0 +1,57 @@
+{
+  "timestamp": "2025-08-01T23:53:37.549Z",
+  "images": {
+    "before": "/Users/adammanuel/Projects/auto-image-diff/examples/screenshots/app-before.png",
+    "after": "/Users/adammanuel/Projects/auto-image-diff/examples/screenshots/app-after.png"
+  },
+  "statistics": {
+    "pixelsDifferent": 213,
+    "totalPixels": 10000,
+    "percentageDifferent": 2.13
+  },
+  "classification": {
+    "totalRegions": 1,
+    "classifiedRegions": 0,
+    "unclassifiedRegions": 1,
+    "byType": {
+      "content": 0,
+      "style": 0,
+      "layout": 0,
+      "size": 0,
+      "structural": 0,
+      "new_element": 0,
+      "removed_element": 0,
+      "unknown": 1
+    },
+    "regions": [
+      {
+        "region": {
+          "id": 1,
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 100
+          },
+          "pixelCount": 10000,
+          "differencePixels": 94,
+          "differencePercentage": 0.9400000000000001
+        },
+        "classification": {
+          "type": "unknown",
+          "confidence": 0,
+          "details": {
+            "reason": "No classifier matched with sufficient confidence"
+          }
+        },
+        "classifier": "none"
+      }
+    ],
+    "confidence": {
+      "min": 0,
+      "max": 0,
+      "avg": 0
+    }
+  },
+  "recommendations": ["Low confidence scores detected. Consider manual review."]
+}

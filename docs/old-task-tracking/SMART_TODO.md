@@ -1,14 +1,17 @@
 # Smart Features Implementation Plan
 
 ## Overview
+
 This document outlines the implementation plan for the advanced "Smart Features" of auto-image-diff, as defined in the PRD. These features enhance the tool's capabilities beyond basic image comparison to provide intelligent analysis and automation.
 
 ## Feature Categories
 
 ### 1. Region Exclusion (FR-005) - Priority P1
+
 **Goal**: Allow users to exclude dynamic regions from comparison to reduce false positives.
 
 #### Implementation Tasks:
+
 - [ ] Create exclusions.json schema and parser
   - Support named regions with bounds (x, y, width, height)
   - Support CSS selectors for dynamic identification
@@ -23,14 +26,17 @@ This document outlines the implementation plan for the advanced "Smart Features"
   - Validate exclusion file format
 
 #### Example Usage:
+
 ```bash
 auto-image-diff before.png after.png -o diff.png --exclude exclusions.json
 ```
 
 ### 2. Smart Difference Detection (FR-006) - Priority P1
+
 **Goal**: Classify and categorize types of differences for better actionability.
 
 #### Implementation Tasks:
+
 - [ ] Create difference classification engine
   - Content changes detector (text, images)
   - Style changes detector (colors, fonts)
@@ -47,6 +53,7 @@ auto-image-diff before.png after.png -o diff.png --exclude exclusions.json
   - Color-code different change types in PNG output
 
 #### Classification Categories:
+
 1. **Content Changes**: Text modifications, image replacements
 2. **Style Changes**: Color variations, font changes, opacity
 3. **Layout Shifts**: Position changes, alignment issues
@@ -54,9 +61,11 @@ auto-image-diff before.png after.png -o diff.png --exclude exclusions.json
 5. **Structural Changes**: Added/removed elements
 
 ### 3. Advanced CLI Options
+
 **Goal**: Provide smart command-line options for advanced use cases.
 
 #### New Options to Implement:
+
 - [ ] `--smart-diff`: Enable intelligent difference classification
 - [ ] `--focus [layout|typography|colors]`: Target specific aspects
 - [ ] `--confidence-threshold N`: Minimum confidence for classifications
@@ -64,9 +73,11 @@ auto-image-diff before.png after.png -o diff.png --exclude exclusions.json
 - [ ] `--progressive`: Enable iterative refinement mode
 
 ### 4. Enhanced Report Generation
+
 **Goal**: Create rich, interactive reports with actionable insights.
 
 #### HTML Report Enhancements:
+
 - [ ] Interactive before/after slider
 - [ ] Difference region highlighting with tooltips
 - [ ] Classification breakdown with statistics
@@ -74,6 +85,7 @@ auto-image-diff before.png after.png -o diff.png --exclude exclusions.json
 - [ ] Exportable difference data
 
 #### JSON Report Enhancements:
+
 - [ ] Detailed regions array with:
   - Bounding boxes
   - Difference types
@@ -83,14 +95,17 @@ auto-image-diff before.png after.png -o diff.png --exclude exclusions.json
 - [ ] Aggregated statistics by category
 
 #### PNG Metadata:
+
 - [ ] Embed statistics in PNG chunks
 - [ ] Include region boundaries
 - [ ] Add processing parameters
 
 ### 5. Batch Processing Intelligence
+
 **Goal**: Smart handling of multiple image comparisons.
 
 #### Implementation Tasks:
+
 - [ ] Smart image pairing algorithm
   - Match by filename patterns
   - Handle different naming conventions
@@ -105,9 +120,11 @@ auto-image-diff before.png after.png -o diff.png --exclude exclusions.json
   - Priority ranking
 
 ### 6. Progressive Refinement Mode
+
 **Goal**: Support iterative improvement workflow.
 
 #### Features:
+
 - [ ] Track improvement history
 - [ ] Calculate accuracy trends
 - [ ] Generate focused fix suggestions
@@ -116,21 +133,25 @@ auto-image-diff before.png after.png -o diff.png --exclude exclusions.json
 ## Implementation Schedule
 
 ### Phase 1: Core Smart Features (Week 1-2)
+
 - Region Exclusion implementation
 - Basic difference classification
 - CLI option additions
 
 ### Phase 2: Advanced Analysis (Week 3-4)
+
 - Complete classification engine
 - Confidence scoring system
 - Enhanced report generation
 
 ### Phase 3: Automation Features (Week 5-6)
+
 - Batch processing intelligence
 - Progressive refinement mode
 - CSS fix generation
 
 ### Phase 4: Testing & Documentation (Week 7-8)
+
 - Comprehensive test coverage
 - Documentation and examples
 - Performance optimization
@@ -145,17 +166,20 @@ auto-image-diff before.png after.png -o diff.png --exclude exclusions.json
 ## Technical Considerations
 
 ### Architecture Changes:
+
 1. Add `DifferenceClassifier` module
 2. Extend `Orchestrator` with smart feature pipeline
 3. Create `RegionAnalyzer` for segmentation
 4. Implement `ExclusionMask` generator
 
 ### Dependencies:
+
 - May need additional CV libraries for region analysis
 - Consider ML models for classification confidence
 - HTML/CSS frameworks for interactive reports
 
 ### Integration Points:
+
 - Hook into existing comparison pipeline
 - Extend CLI argument parser
 - Enhance output generators

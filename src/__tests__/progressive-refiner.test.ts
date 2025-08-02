@@ -158,7 +158,7 @@ describe("ProgressiveRefiner", () => {
 
       expect(mockFs.writeFile).toHaveBeenCalledWith(
         expect.stringContaining("/tmp/sessions/refine-"),
-        expect.stringContaining('"originalDifference":5')
+        expect.stringMatching(/"originalDifference"\s*:\s*5/)
       );
     });
 

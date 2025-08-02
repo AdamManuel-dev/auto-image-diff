@@ -22,7 +22,7 @@ async function batchProcessing() {
     
     // Configure batch processing
     const result = await batchProcessor.processBatch(referenceDir, targetDir, {
-      pattern: '**/*.png',
+      pattern: '*.png',
       recursive: true,
       outputDir: outputDir,
       threshold: 0.5,
@@ -50,11 +50,7 @@ async function batchProcessing() {
             reason: 'User-specific content'
           }
         ]
-      },
-      
-      // Enable batch summary generation
-      generateSummary: true,
-      embedMetadata: true
+      }
     });
     
     // Display results
@@ -99,12 +95,7 @@ async function batchProcessing() {
     await fs.writeFile(reportPath, JSON.stringify(result, null, 2));
     console.log(`\n📄 Detailed report saved to: ${reportPath}`);
     
-    // Generate HTML summary if available
-    if (result.htmlSummary) {
-      const htmlPath = path.join(outputDir, 'summary.html');
-      await fs.writeFile(htmlPath, result.htmlSummary);
-      console.log(`📊 HTML summary saved to: ${htmlPath}`);
-    }
+    // Process is complete
     
   } catch (error) {
     console.error('❌ Error:', error);

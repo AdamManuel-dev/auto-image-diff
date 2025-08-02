@@ -15,7 +15,7 @@ async function progressiveRefinement() {
   const processor = new ImageProcessor();
   const refiner = new ProgressiveRefiner({
     minConfidence: 0.7,
-    excludeTypes: ['style'], // Exclude style-only changes
+    excludeTypes: [], // Don't exclude any types by default
     targetDifferenceThreshold: 0.5, // Target < 0.5% difference
     maxIterations: 10
   });
@@ -78,23 +78,11 @@ async function progressiveRefinement() {
       console.log();
     });
     
-    // Interactive mode
-    const accepted: number[] = [];
+    // Non-interactive mode for testing - accept first suggestion
+    const accepted: number[] = [0];
     const rejected: number[] = [];
     
-    console.log('Review each suggestion:');
-    for (let i = 0; i < suggestions.length; i++) {
-      const answer = await rl.question(`Accept suggestion ${i + 1}? (y/n/q to quit): `);
-      
-      if (answer.toLowerCase() === 'q') {
-        break;
-      } else if (answer.toLowerCase() === 'y') {
-        accepted.push(i);
-      } else {
-        rejected.push(i);
-      }
-    }
-    
+    console.log('Auto-accepting first suggestion for demo...');
     rl.close();
     
     if (accepted.length === 0) {
@@ -106,8 +94,17 @@ async function progressiveRefinement() {
     console.log(`\n✅ Applying ${accepted.length} refinements...`);
     await refiner.applyRefinement(suggestions, accepted, rejected);
     
-    // Get updated exclusions
-    const updatedExclusions = refiner.getUpdatedExclusions();
+    // Create updated exclusions based on accepted suggestions
+    const updatedExclusions = exclusions || { version: '1.0', regions: [] };
+    suggestions.forEach((suggestion, index) => {
+      if (accepted.includes(index) && suggestion.type === 'exclude' && suggestion.region) {
+        updatedExclusions.regions.push({
+          name: `auto-excluded-${Date.now()}-${index}`,
+          bounds: suggestion.region.bounds,
+          reason: suggestion.reason
+        });
+      }
+    });
     
     // Save exclusions
     await fs.mkdir(outputDir, { recursive: true });

@@ -1,0 +1,25 @@
+{
+  "session": {
+    "id": "refine-1754092392746-ez8s6wqrj",
+    "timestamp": "2025-08-01T23:53:12.746Z",
+    "iterations": 1,
+    "originalDifference": 2.13,
+    "currentDifference": 2.13,
+    "excludedRegions": 0,
+    "acceptedSuggestions": 1,
+    "rejectedSuggestions": 0,
+    "history": [
+      {
+        "iteration": 1,
+        "action": "Applied 1 suggestions, rejected 0",
+        "result": {
+          "difference": 2.13,
+          "regionsExcluded": 0
+        }
+      }
+    ]
+  },
+  "accepted": [0],
+  "rejected": [],
+  "timestamp": "2025-08-01T23:53:13.239Z"
+}

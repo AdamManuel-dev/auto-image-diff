@@ -46,24 +46,25 @@ async function cssSuggestions() {
     if (result.cssSuggestions && result.cssSuggestions.length > 0) {
       console.log(`\n💡 CSS Fix Suggestions (${result.cssSuggestions.length} total):\n`);
       
-      // Sort by confidence
+      // Sort by priority
+      const priorityOrder = { high: 3, medium: 2, low: 1 };
       const sortedSuggestions = [...result.cssSuggestions]
-        .sort((a, b) => b.confidence - a.confidence);
+        .sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]);
       
       // Display top suggestions
       sortedSuggestions.slice(0, 10).forEach((suggestion, index) => {
         console.log(`${index + 1}. ${suggestion.description}`);
-        console.log(`   Property: ${suggestion.property}`);
-        console.log(`   Value: ${suggestion.value}`);
-        console.log(`   Confidence: ${(suggestion.confidence * 100).toFixed(1)}%`);
-        if (suggestion.reason) {
-          console.log(`   Reason: ${suggestion.reason}`);
-        }
+        console.log(`   Type: ${suggestion.type}`);
+        console.log(`   Priority: ${suggestion.priority}`);
+        console.log(`   Fixes: ${suggestion.fixes.length} CSS properties`);
+        suggestion.fixes.slice(0, 2).forEach(fix => {
+          console.log(`     - ${fix.property}: ${fix.newValue}`);
+        });
         console.log();
       });
       
       // Generate CSS file
-      const cssCode = suggester.formatAsCss(sortedSuggestions);
+      const cssCode = suggester.formatAsCss(result.cssSuggestions);
       const cssPath = path.join(outputDir, 'suggested-fixes.css');
       await fs.mkdir(outputDir, { recursive: true });
       await fs.writeFile(cssPath, cssCode);
@@ -82,7 +83,7 @@ async function cssSuggestions() {
             medium: result.cssSuggestions.filter(s => s.priority === 'medium').length,
             low: result.cssSuggestions.filter(s => s.priority === 'low').length
           },
-          byProperty: groupBy(result.cssSuggestions, 'property'),
+          byType: groupBy(result.cssSuggestions, 'type'),
           all: result.cssSuggestions
         }
       };
@@ -161,9 +162,11 @@ function generateHtmlPreview(suggestions: any[], classification: any, cssCode: s
             ${suggestions.map(s => `
                 <div class="suggestion ${s.priority}">
                     <h3>${s.description}</h3>
-                    <p><span class="property">${s.property}</span>: <span class="value">${s.value}</span></p>
-                    <p>Confidence: ${(s.confidence * 100).toFixed(1)}%</p>
-                    ${s.reason ? `<p><em>${s.reason}</em></p>` : ''}
+                    <p>Type: ${s.type}</p>
+                    <p>Priority: ${s.priority}</p>
+                    <div style="margin-top: 10px;">
+                    ${s.fixes.map((f: any) => `<div><span class="property">${f.property}</span>: <span class="value">${f.newValue}</span></div>`).join('')}
+                    </div>
                 </div>
             `).join('')}
         </div>

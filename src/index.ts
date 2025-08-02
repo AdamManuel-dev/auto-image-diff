@@ -12,4 +12,12 @@ export { ImageProcessor, ComparisonResult, AlignmentOptions } from "./lib/imageP
 
 export { BatchProcessor, BatchResult, BatchOptions } from "./lib/batchProcessor";
 
+export { CssFixSuggester, FixSuggestion, CssFix } from "./lib/css-fix-suggester";
+
+export { PngMetadataEmbedder } from "./lib/png-metadata";
+
+export { MetadataEnhancer } from "./lib/metadata-enhancer";
+
+export { ProgressiveRefiner } from "./lib/progressive-refiner";
+
 // CLI is handled separately in cli.ts
