@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * @fileoverview Processor edge case tests
  * @lastmodified 2025-08-01T06:30:00Z
