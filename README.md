@@ -47,6 +47,7 @@ auto-image-diff uses ImageMagick's powerful image processing capabilities to:
 - 🔍 **Smart File Pairing**: Fuzzy matching algorithm for intelligent batch comparisons
 - 🔬 **OpenCV Support**: Advanced feature-based alignment using ORB and SIFT algorithms
 - 📊 **Performance Metrics**: Detailed processing statistics and throughput analysis
+- 🤖 **AI Agent Integration**: Optimized for use with Claude Code and other AI coding assistants
 
 ## 📦 Installation
 
@@ -392,6 +393,7 @@ Comprehensive documentation is available in the [docs](./docs) directory:
 - [CLI Usage](./docs/guides/CLI_USAGE.md) - Command-line interface guide
 - [Batch Processing](./docs/guides/BATCH_PROCESSING.md) - Processing multiple images
 - [Classification System](./docs/modules/classifiers.md) - Understanding change types
+- [AI Coding Agents](./docs/guides/AI_CODING_AGENTS.md) - Using with Claude Code and AI assistants
 - [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ### Advanced Topics

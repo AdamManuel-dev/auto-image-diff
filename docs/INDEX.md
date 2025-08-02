@@ -17,11 +17,13 @@ Welcome to the auto-image-diff documentation! This index provides a comprehensiv
 ## 📚 Feature Documentation
 
 ### Core Features
+
 - [**Image Processing**](./modules/image-processor.md) - Alignment and comparison
 - [**Batch Processing**](./modules/batch-processor.md) - Multiple image handling
 - [**Classification System**](./modules/classifiers.md) - Difference categorization
 
 ### Advanced Features
+
 - [**CSS Fix Suggestions**](./modules/css-fixes.md) - Automatic style fixes
 - [**Progressive Refinement**](./modules/progressive-refinement.md) - Interactive improvement
 - [**Metadata Enhancement**](./modules/metadata.md) - Tracking and embedding
@@ -42,11 +44,14 @@ Welcome to the auto-image-diff documentation! This index provides a comprehensiv
 ## 📖 Guides & Tutorials
 
 ### Usage Guides
+
 - [**CLI Usage**](./guides/CLI_USAGE.md) - Command-line interface guide
 - [**Programmatic Usage**](./guides/PROGRAMMATIC_USAGE.md) - Using as a library
 - [**Batch Processing**](./guides/BATCH_PROCESSING.md) - Processing multiple images
+- [**AI Coding Agents**](./guides/AI_CODING_AGENTS.md) - Using with Claude Code and other AI tools
 
 ### Feature Guides
+
 - [**Exclusion Regions**](./guides/EXCLUSIONS.md) - Ignoring dynamic content
 - [**Classification**](./guides/CLASSIFICATION.md) - Understanding change types
 - [**Report Generation**](./guides/REPORTS.md) - Creating visual reports
@@ -60,11 +65,13 @@ Welcome to the auto-image-diff documentation! This index provides a comprehensiv
 ## 📊 Reference
 
 ### Technical Reference
+
 - [**Change Log**](../CHANGELOG.md) - Version history
 - [**Release Notes**](../RELEASE_NOTES.md) - Detailed release information
 - [**Technical Debt**](../TECH_DEBT.md) - Known issues and improvements
 
 ### Planning & Design
+
 - [**Initial Planning**](./initial-planning/) - Original design documents
   - [Detailed PRD](./initial-planning/imagediff-prd-detailed.md)
   - [Methodology](./initial-planning/methodology-vibes.md)
@@ -75,37 +82,50 @@ Welcome to the auto-image-diff documentation! This index provides a comprehensiv
 ### By Use Case
 
 **Visual Regression Testing**
+
 - [Getting Started](./guides/GETTING_STARTED.md#visual-regression)
 - [CI Integration](./guides/CI_INTEGRATION.md)
 - [Exclusions](./guides/EXCLUSIONS.md)
 
 **UI Development**
+
 - [CSS Fix Suggestions](./modules/css-fixes.md)
 - [Progressive Refinement](./modules/progressive-refinement.md)
 - [Classification](./guides/CLASSIFICATION.md)
 
 **Batch Processing**
+
 - [Batch Guide](./guides/BATCH_PROCESSING.md)
 - [Smart Pairing](./modules/smart-pairing.md)
 - [Reports](./guides/REPORTS.md)
 
+**AI-Assisted Development**
+
+- [AI Coding Agents](./guides/AI_CODING_AGENTS.md)
+- [CSS Fix Suggestions](./modules/css-fixes.md)
+- [Classification](./guides/CLASSIFICATION.md)
+
 ### By Technology
 
 **ImageMagick**
+
 - [Architecture](./ARCHITECTURE.md#image-processing)
 - [Alignment Methods](./modules/image-processor.md#alignment)
 
 **OpenCV**
+
 - [Setup Guide](./OPENCV_SETUP.md)
 - [Feature Matching](./modules/image-processor.md#opencv)
 
 **TypeScript/Node.js**
+
 - [API Reference](./API-REFERENCE.md)
 - [Development](./guides/DEVELOPMENT.md)
 
 ## 📝 Documentation Standards
 
 All documentation follows these conventions:
+
 - **Markdown** formatting with GitHub Flavored Markdown
 - **Code examples** for all major features
 - **Cross-references** between related topics
