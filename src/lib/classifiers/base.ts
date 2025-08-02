@@ -64,6 +64,15 @@ export abstract class DifferenceClassifier {
 
   /**
    * Analyzes a difference region and returns classification result
+   * 
+   * Core method that each classifier must implement to analyze a specific
+   * region of difference and determine what type of change it represents.
+   *
+   * @param {DifferenceRegion} region - The region to classify with bounds and metrics
+   * @param {AnalysisContext} context - Full image context including original and compared data
+   * @returns {ClassificationResult | null} Classification result with confidence, or null if cannot classify
+   * 
+   * @abstract
    */
   abstract classify(
     region: DifferenceRegion,
@@ -72,6 +81,16 @@ export abstract class DifferenceClassifier {
 
   /**
    * Determines if this classifier can handle the given region
+   * 
+   * Pre-check method to quickly determine if this classifier is appropriate
+   * for the given region type. Used to avoid expensive classification operations
+   * on unsuitable regions.
+   *
+   * @param {DifferenceRegion} region - The region to check
+   * @param {AnalysisContext} context - Image context
+   * @returns {boolean} True if this classifier should attempt to classify the region
+   * 
+   * @abstract
    */
   abstract canClassify(
     region: DifferenceRegion,
@@ -87,7 +106,17 @@ export abstract class DifferenceClassifier {
   }
 
   /**
-   * Extract pixel data for a specific region
+   * Extract pixel data for a specific region from image data
+   * 
+   * Extracts RGBA pixel values for a rectangular region from the full image data.
+   * Used by classifiers to analyze specific areas of difference.
+   *
+   * @param {Uint8Array | Uint8ClampedArray} imageData - Full image pixel data in RGBA format
+   * @param {number} width - Width of the full image
+   * @param {DifferenceRegion['bounds']} bounds - Region bounds to extract
+   * @returns {Uint8Array} Extracted pixel data for the region in RGBA format
+   * 
+   * @protected
    */
   protected extractRegionData(
     imageData: Uint8Array | Uint8ClampedArray,
@@ -115,6 +144,17 @@ export abstract class DifferenceClassifier {
 
   /**
    * Calculate color statistics for a region
+   * 
+   * Analyzes pixel data to compute color statistics including average color,
+   * variance, and dominant colors. Used by classifiers to detect color-based changes.
+   *
+   * @param {Uint8Array} pixelData - Region pixel data in RGBA format
+   * @returns {Object} Color statistics
+   * @returns {Object} returns.avgColor - Average RGBA color values
+   * @returns {number} returns.variance - Color variance measure
+   * @returns {Array<{color: string, count: number}>} returns.dominantColors - Most frequent colors
+   * 
+   * @protected
    */
   protected calculateColorStats(pixelData: Uint8Array): {
     avgColor: { r: number; g: number; b: number; a: number };

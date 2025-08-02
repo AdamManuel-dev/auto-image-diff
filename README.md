@@ -313,6 +313,31 @@ if (!result.isEqual) {
 }
 ```
 
+## 📚 Documentation
+
+Comprehensive documentation is available in the [docs](./docs) directory:
+
+### Getting Started
+- [Getting Started Guide](./docs/guides/GETTING_STARTED.md) - Installation and first steps
+- [Examples](./examples/README.md) - Code examples for common use cases
+- [API Reference](./docs/API-REFERENCE.md) - Complete API documentation
+
+### Guides
+- [CLI Usage](./docs/guides/CLI_USAGE.md) - Command-line interface guide
+- [Batch Processing](./docs/guides/BATCH_PROCESSING.md) - Processing multiple images
+- [Classification System](./docs/modules/classifiers.md) - Understanding change types
+- [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues and solutions
+
+### Advanced Topics
+- [Architecture Overview](./docs/ARCHITECTURE.md) - System design and internals
+- [Testing Guide](./docs/guides/TESTING.md) - Running and writing tests
+- [OpenCV Setup](./docs/OPENCV_SETUP.md) - Advanced alignment features
+
+### Quick Links
+- [Documentation Index](./docs/INDEX.md) - Complete documentation map
+- [FAQ](./docs/guides/FAQ.md) - Frequently asked questions
+- [Contributing](./CONTRIBUTING.md) - How to contribute
+
 ### CI/CD Integration
 
 #### GitHub Actions

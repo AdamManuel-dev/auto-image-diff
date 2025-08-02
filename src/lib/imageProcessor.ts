@@ -61,7 +61,44 @@ export class ImageProcessor {
   }
 
   /**
-   * Align two images using ImageMagick's subimage search or other methods
+   * Align two images using various alignment methods to find the best match
+   * 
+   * Attempts multiple alignment strategies in order:
+   * - OpenCV feature-based alignment (SIFT/ORB)
+   * - Direct subimage search (target within reference)
+   * - Reverse subimage search (reference within target)
+   * - Edge-based alignment for UI screenshots
+   * - Cropped region search for partial matches
+   * - Multi-scale search for different resolutions
+   * - Phase correlation as last resort
+   *
+   * @param {string} referenceImage - Path to the reference (baseline) image
+   * @param {string} targetImage - Path to the target image to align
+   * @param {string} outputPath - Path where the aligned image will be saved
+   * @param {AlignmentOptions} options - Alignment configuration options
+   * @param {"feature" | "phase" | "subimage" | "opencv"} options.method - Primary alignment method to use
+   * @param {number} [options.threshold] - Matching threshold for alignment confidence
+   * @param {"orb" | "akaze" | "brisk"} [options.opencvDetector] - OpenCV feature detector type
+   * @returns {Promise<AlignmentResult>} Result containing aligned image path and transformation details
+   * @throws {Error} If alignment fails or ImageMagick is not installed
+   * 
+   * @example <caption>Basic alignment with default settings</caption>
+   * const result = await imageProcessor.alignImages(
+   *   'baseline.png',
+   *   'screenshot.png',
+   *   'aligned.png'
+   * );
+   * console.log(`Offset: ${result.offset.x}, ${result.offset.y}`);
+   * 
+   * @example <caption>Using OpenCV feature-based alignment</caption>
+   * const result = await imageProcessor.alignImages(
+   *   'baseline.png',
+   *   'screenshot.png',
+   *   'aligned.png',
+   *   { method: 'opencv', opencvDetector: 'orb' }
+   * );
+   * 
+   * @since 1.0.0
    */
   async alignImages(
     referenceImage: string,
@@ -237,7 +274,14 @@ export class ImageProcessor {
   }
 
   /**
-   * Try subimage search and return score and offset
+   * Try subimage search using ImageMagick compare command
+   * 
+   * Uses RMSE (Root Mean Square Error) metric to find the best position
+   * where one image matches within another image.
+   *
+   * @param {string} cmd - ImageMagick compare command to execute
+   * @returns {Promise<{score: number, offset: {x: number, y: number}}>} Match score and position
+   * @private
    */
   private async trySubimageSearch(cmd: string): Promise<{ score: number; offset: { x: number; y: number } }> {
     try {
@@ -294,7 +338,16 @@ export class ImageProcessor {
   }
 
   /**
-   * Try edge-based alignment for UI screenshots
+   * Try edge-based alignment optimized for UI screenshots
+   * 
+   * Detects edges in both images and attempts to align based on
+   * structural features rather than pixel values. Particularly effective
+   * for UI elements with clear boundaries.
+   *
+   * @param {string} reference - Path to reference image
+   * @param {string} target - Path to target image
+   * @returns {Promise<{score: number, offset: {x: number, y: number}}>} Alignment score and offset
+   * @private
    */
   private async tryEdgeBasedAlignment(reference: string, target: string): Promise<{ score: number; offset: { x: number; y: number } }> {
     const tempDir = os.tmpdir();
@@ -618,7 +671,30 @@ export class ImageProcessor {
   }
 
   /**
-   * Compare two images and generate difference metrics
+   * Compare two images and calculate difference metrics
+   * 
+   * Uses ImageMagick's compare command with AE (Absolute Error) metric
+   * to count the number of pixels that differ between two images.
+   *
+   * @param {string} image1Path - Path to first image
+   * @param {string} image2Path - Path to second image
+   * @param {number} threshold - Percentage threshold for considering images equal (default: 0.1%)
+   * @returns {Promise<ComparisonResult>} Comparison metrics including pixel differences
+   * @throws {Error} If images cannot be compared or have different dimensions
+   * 
+   * @example
+   * const result = await imageProcessor.compareImages(
+   *   'before.png',
+   *   'after.png',
+   *   0.5 // 0.5% threshold
+   * );
+   * if (result.isEqual) {
+   *   console.log('Images are visually identical');
+   * } else {
+   *   console.log(`${result.statistics.pixelsDifferent} pixels differ`);
+   * }
+   * 
+   * @since 1.0.0
    */
   async compareImages(
     image1Path: string,
@@ -666,7 +742,52 @@ export class ImageProcessor {
   }
 
   /**
-   * Generate a visual diff between two images
+   * Generate a visual difference image with optional classification
+   * 
+   * Creates a visual representation of differences between two images,
+   * with customizable highlighting and optional exclusion regions.
+   * Can also run classification to categorize types of changes.
+   *
+   * @param {string} image1Path - Path to first image (reference)
+   * @param {string} image2Path - Path to second image (comparison)
+   * @param {string} outputPath - Path where diff image will be saved
+   * @param {Object} options - Diff generation options
+   * @param {string} [options.highlightColor='red'] - Color for highlighting differences
+   * @param {boolean} [options.lowlight=false] - Whether to dim unchanged areas
+   * @param {ExclusionsConfig} [options.exclusions] - Regions to exclude from diff
+   * @param {boolean} [options.runClassification=false] - Whether to classify difference types
+   * @param {boolean} [options.generateCssSuggestions=false] - Generate CSS fix suggestions
+   * @param {boolean} [options.embedMetadata=false] - Embed metadata in output PNG
+   * @param {Object} [options.metadata] - Additional metadata to embed
+   * @returns {Promise<ComparisonResult>} Detailed comparison results with statistics
+   * @throws {Error} If diff generation fails
+   * 
+   * @example <caption>Basic diff with red highlighting</caption>
+   * const result = await imageProcessor.generateDiff(
+   *   'original.png',
+   *   'modified.png',
+   *   'diff.png'
+   * );
+   * 
+   * @example <caption>Advanced diff with classification and CSS suggestions</caption>
+   * const result = await imageProcessor.generateDiff(
+   *   'original.png',
+   *   'modified.png',
+   *   'diff.png',
+   *   {
+   *     highlightColor: 'magenta',
+   *     lowlight: true,
+   *     runClassification: true,
+   *     generateCssSuggestions: true,
+   *     embedMetadata: true
+   *   }
+   * );
+   * console.log('Classification:', result.classification);
+   * console.log('CSS fixes:', result.cssSuggestions);
+   * 
+   * @see {@link ExclusionsConfig} For exclusion region format
+   * @see {@link ClassificationSummary} For classification result format
+   * @since 1.0.0
    */
   async generateDiff(
     image1Path: string,

@@ -53,7 +53,19 @@ export class BatchProcessor {
   }
 
   /**
-   * Process items in parallel with concurrency control
+   * Process items in parallel with controlled concurrency
+   * 
+   * Implements a worker pool pattern to process multiple items concurrently
+   * while limiting the number of simultaneous operations. Shows real-time
+   * progress in the console.
+   *
+   * @param {T[]} items - Array of items to process
+   * @param {number} concurrency - Maximum number of concurrent operations
+   * @param {Function} processor - Async function to process each item
+   * @returns {Promise<Array<{item: T, value?: R, error?: string, index: number}>>} Results array with values or errors
+   * @private
+   * @template T - Type of items to process
+   * @template R - Type of processing result
    */
   private async processInParallel<T, R>(
     items: T[],
@@ -111,7 +123,56 @@ export class BatchProcessor {
   }
 
   /**
-   * Process a batch of images from directories
+   * Process a batch of images from directories with alignment and comparison
+   * 
+   * Scans reference and target directories for images, pairs them up,
+   * aligns each pair, and generates visual diffs. Supports parallel
+   * processing and smart file pairing algorithms.
+   *
+   * @param {string} referenceDir - Directory containing reference (baseline) images
+   * @param {string} targetDir - Directory containing target images to compare
+   * @param {BatchOptions} options - Batch processing configuration
+   * @param {string} [options.pattern] - Glob pattern to filter image files
+   * @param {boolean} [options.recursive=false] - Whether to scan subdirectories
+   * @param {string} options.outputDir - Directory to save results
+   * @param {number} [options.threshold] - Difference threshold for comparisons
+   * @param {boolean} [options.parallel=true] - Enable parallel processing
+   * @param {number} [options.maxConcurrency=4] - Maximum concurrent operations
+   * @param {ExclusionsConfig} [options.exclusions] - Regions to exclude from comparison
+   * @param {boolean} [options.runClassification=false] - Run difference classification
+   * @param {boolean} [options.smartPairing=false] - Use smart file pairing algorithm
+   * @returns {Promise<BatchResult>} Summary of batch processing results
+   * @throws {Error} If directories cannot be accessed or processing fails
+   * 
+   * @example <caption>Basic batch processing</caption>
+   * const result = await batchProcessor.processBatch(
+   *   './screenshots/baseline',
+   *   './screenshots/current',
+   *   {
+   *     outputDir: './output',
+   *     pattern: '*.png',
+   *     recursive: true
+   *   }
+   * );
+   * console.log(`Processed ${result.processed} images`);
+   * 
+   * @example <caption>Advanced batch with classification</caption>
+   * const result = await batchProcessor.processBatch(
+   *   './baseline',
+   *   './current',
+   *   {
+   *     outputDir: './results',
+   *     parallel: true,
+   *     maxConcurrency: 8,
+   *     smartPairing: true,
+   *     runClassification: true,
+   *     exclusions: {
+   *       regions: [{ x: 0, y: 0, width: 100, height: 50 }]
+   *     }
+   *   }
+   * );
+   * 
+   * @since 1.0.0
    */
   async processBatch(
     referenceDir: string,
