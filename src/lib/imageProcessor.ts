@@ -21,6 +21,7 @@ import { getAllClassifiers } from "./classifiers";
 import { CssFixSuggester, FixSuggestion } from "./css-fix-suggester";
 import { PngMetadataEmbedder } from "./png-metadata";
 import { MetadataEnhancer } from "./metadata-enhancer";
+import { OpenCVFeatureMatcher } from "./opencvFeatureMatcher";
 
 const execAsync = promisify(exec);
 const imageMagick = gm.subClass({ imageMagick: true });
@@ -39,59 +40,580 @@ export interface ComparisonResult {
 }
 
 export interface AlignmentOptions {
-  method: "feature" | "phase" | "subimage";
+  method: "feature" | "phase" | "subimage" | "opencv";
   threshold?: number;
+  opencvDetector?: "orb" | "akaze" | "brisk";
+}
+
+export interface AlignmentResult {
+  alignedPath: string;
+  offset: { x: number; y: number };
+  matchingRegion?: { x: number; y: number; width: number; height: number };
 }
 
 export class ImageProcessor {
   private metadataEnhancer: MetadataEnhancer;
+  private opencvMatcher: OpenCVFeatureMatcher;
 
   constructor() {
     this.metadataEnhancer = new MetadataEnhancer();
+    this.opencvMatcher = new OpenCVFeatureMatcher();
   }
 
   /**
-   * Align two images using ImageMagick's subimage search
+   * Align two images using ImageMagick's subimage search or other methods
    */
   async alignImages(
     referenceImage: string,
     targetImage: string,
     outputPath: string,
-    _options: AlignmentOptions = { method: "subimage" }
-  ): Promise<void> {
+    options: AlignmentOptions = { method: "subimage" }
+  ): Promise<AlignmentResult> {
     try {
-      // Use shell command for subimage search
-      const cmd = `compare -metric rmse -subimage-search "${referenceImage}" "${targetImage}" null: 2>&1`;
-
-      const offset = { x: 0, y: 0 };
-      try {
-        await execAsync(cmd);
-      } catch (error) {
-        // Compare returns non-zero exit when images differ
-        // The offset info is in stderr/stdout
-        const execError = error as { stdout?: string; stderr?: string };
-        const output = execError.stderr || execError.stdout || "";
-
-        // Extract offset from output
-        const match = output.match(/@ ([-\d]+),([-\d]+)/);
-        if (match) {
-          offset.x = parseInt(match[1], 10);
-          offset.y = parseInt(match[2], 10);
+      // Get dimensions of both images
+      const refSize = await this.getImageSize(referenceImage);
+      const targetSize = await this.getImageSize(targetImage);
+      
+      console.log(`Reference: ${refSize.width}x${refSize.height}, Target: ${targetSize.width}x${targetSize.height}`);
+      
+      let offset = { x: 0, y: 0 };
+      let bestMatch = { score: Infinity, offset: { x: 0, y: 0 }, method: "none" };
+      
+      // Method 0: Try OpenCV feature matching if requested
+      if (options.method === "opencv") {
+        try {
+          console.log("Trying OpenCV feature-based alignment...");
+          const featureResult = await this.opencvMatcher.findFeatureAlignment(
+            referenceImage,
+            targetImage,
+            {
+              detector: options.opencvDetector || 'orb',
+              maxFeatures: 1000,
+              matchThreshold: 0.7
+            }
+          );
+          
+          if (featureResult && featureResult.confidence > 0.3) {
+            // Use OpenCV to warp the image
+            const tempAligned = outputPath + '.temp.png';
+            await this.opencvMatcher.alignWithFeatures(
+              targetImage,
+              tempAligned,
+              featureResult.homography,
+              refSize
+            );
+            
+            // Move temp file to output
+            await execAsync(`mv "${tempAligned}" "${outputPath}"`);
+            
+            console.log(`OpenCV alignment successful: ${featureResult.inliers}/${featureResult.totalMatches} inliers, confidence: ${featureResult.confidence.toFixed(2)}`);
+            console.log(`Transform: translation=(${featureResult.transform.translation.x.toFixed(1)}, ${featureResult.transform.translation.y.toFixed(1)}), scale=(${featureResult.transform.scale.x.toFixed(2)}, ${featureResult.transform.scale.y.toFixed(2)}), rotation=${featureResult.transform.rotation.toFixed(1)}°`);
+            
+            return {
+              alignedPath: outputPath,
+              offset: {
+                x: Math.round(featureResult.transform.translation.x),
+                y: Math.round(featureResult.transform.translation.y)
+              },
+              matchingRegion: {
+                x: 0,
+                y: 0,
+                width: refSize.width,
+                height: refSize.height
+              }
+            };
+          } else {
+            console.log("OpenCV feature matching failed or low confidence");
+          }
+        } catch (e) {
+          console.log("OpenCV feature alignment failed:", e);
         }
       }
-
-      // Apply transformation to align images or copy as-is
-      if (offset.x !== 0 || offset.y !== 0) {
-        // Use convert to apply offset
-        const convertCmd = `convert "${targetImage}" -geometry +${offset.x}+${offset.y} "${outputPath}"`;
-        await execAsync(convertCmd);
-      } else {
-        // No offset needed, just copy
-        const copyCmd = `cp "${targetImage}" "${outputPath}"`;
-        await execAsync(copyCmd);
+      
+      // Method 1: Try direct subimage search (target within reference)
+      if (targetSize.width <= refSize.width && targetSize.height <= refSize.height) {
+        try {
+          const cmd = `compare -metric rmse -subimage-search "${referenceImage}" "${targetImage}" null: 2>&1`;
+          const result = await this.trySubimageSearch(cmd);
+          if (result.score < bestMatch.score) {
+            bestMatch = { ...result, method: "target-in-ref" };
+          }
+        } catch (e) {
+          console.log("Subimage search (target in ref) failed:", e);
+        }
       }
+      
+      // Method 2: Try reverse subimage search (reference within target)
+      if (refSize.width <= targetSize.width && refSize.height <= targetSize.height) {
+        try {
+          const cmd = `compare -metric rmse -subimage-search "${targetImage}" "${referenceImage}" null: 2>&1`;
+          const result = await this.trySubimageSearch(cmd);
+          // Invert the offset for reverse search
+          if (result.score < bestMatch.score) {
+            bestMatch = { 
+              score: result.score, 
+              offset: { x: -result.offset.x, y: -result.offset.y },
+              method: "ref-in-target"
+            };
+          }
+        } catch (e) {
+          console.log("Subimage search (ref in target) failed:", e);
+        }
+      }
+      
+      // Method 3: Try edge-based alignment for UI screenshots
+      if (bestMatch.method === "none" || bestMatch.score > 1000) {
+        try {
+          const result = await this.tryEdgeBasedAlignment(referenceImage, targetImage);
+          if (result.score < bestMatch.score) {
+            bestMatch = { ...result, method: "edge-based" };
+          }
+        } catch (e) {
+          console.log("Edge-based alignment failed:", e);
+        }
+      }
+      
+      // Method 4: Try cropped region search for overlapping content
+      if (bestMatch.method === "none" || bestMatch.score > 5000) {
+        try {
+          const result = await this.tryCroppedRegionSearch(referenceImage, targetImage);
+          if (result.score < bestMatch.score) {
+            bestMatch = { ...result, method: "cropped-region" };
+          }
+        } catch (e) {
+          console.log("Cropped region search failed:", e);
+        }
+      }
+      
+      // Method 5: Try multi-scale search for partial overlaps
+      if (bestMatch.method === "none" || bestMatch.score > 1000) {
+        try {
+          const result = await this.tryMultiScaleSearch(referenceImage, targetImage);
+          if (result.score < bestMatch.score) {
+            bestMatch = { ...result, method: "multi-scale" };
+          }
+        } catch (e) {
+          console.log("Multi-scale search failed:", e);
+        }
+      }
+      
+      // Method 6: Try phase correlation as last resort
+      if (options.method === "phase" || bestMatch.method === "none") {
+        try {
+          const result = await this.tryPhaseCorrelation(referenceImage, targetImage);
+          if (result.score < bestMatch.score) {
+            bestMatch = { ...result, method: "phase" };
+          }
+        } catch (e) {
+          console.log("Phase correlation failed:", e);
+        }
+      }
+      
+      // Use the best match found
+      offset = bestMatch.offset;
+      console.log(`Best alignment: method=${bestMatch.method}, offset=(${offset.x},${offset.y}), score=${bestMatch.score}`);
+      
+      // Apply transformation to align images
+      // Create a canvas of reference size, place the target image at the offset position
+      const convertCmd = `convert -size ${refSize.width}x${refSize.height} xc:transparent "${targetImage}" -geometry +${offset.x}+${offset.y} -composite "${outputPath}"`;
+      await execAsync(convertCmd);
+      
+      // Calculate the matching region (overlapping area)
+      const matchingRegion = {
+        x: Math.max(0, offset.x),
+        y: Math.max(0, offset.y),
+        width: Math.min(refSize.width - Math.max(0, offset.x), targetSize.width - Math.max(0, -offset.x)),
+        height: Math.min(refSize.height - Math.max(0, offset.y), targetSize.height - Math.max(0, -offset.y))
+      };
+      
+      return {
+        alignedPath: outputPath,
+        offset,
+        matchingRegion
+      };
     } catch (error) {
       throw new Error(`Failed to align images: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Try subimage search and return score and offset
+   */
+  private async trySubimageSearch(cmd: string): Promise<{ score: number; offset: { x: number; y: number } }> {
+    try {
+      const { stdout, stderr } = await execAsync(cmd);
+      const output = stderr || stdout || "";
+      
+      // Extract score and offset
+      const lines = output.trim().split('\n');
+      let score = Infinity;
+      let offset = { x: 0, y: 0 };
+      
+      for (const line of lines) {
+        // Look for RMSE score
+        const scoreMatch = line.match(/^(\d+\.?\d*)/);
+        if (scoreMatch) {
+          score = parseFloat(scoreMatch[1]);
+        }
+        
+        // Look for offset
+        const offsetMatch = line.match(/@ ([-\d]+),([-\d]+)/);
+        if (offsetMatch) {
+          offset.x = parseInt(offsetMatch[1], 10);
+          offset.y = parseInt(offsetMatch[2], 10);
+        }
+      }
+      
+      return { score, offset };
+    } catch (error) {
+      // Compare returns non-zero exit when images differ
+      const execError = error as { stdout?: string; stderr?: string };
+      const output = execError.stderr || execError.stdout || "";
+      
+      // Try to extract results even from error output
+      let score = Infinity;
+      let offset = { x: 0, y: 0 };
+      
+      const scoreMatch = output.match(/(\d+\.?\d*) \(/);
+      if (scoreMatch) {
+        score = parseFloat(scoreMatch[1]);
+      }
+      
+      const offsetMatch = output.match(/@ ([-\d]+),([-\d]+)/);
+      if (offsetMatch) {
+        offset.x = parseInt(offsetMatch[1], 10);
+        offset.y = parseInt(offsetMatch[2], 10);
+      }
+      
+      if (offsetMatch) {
+        return { score, offset };
+      }
+      
+      throw error;
+    }
+  }
+
+  /**
+   * Try edge-based alignment for UI screenshots
+   */
+  private async tryEdgeBasedAlignment(reference: string, target: string): Promise<{ score: number; offset: { x: number; y: number } }> {
+    const tempDir = os.tmpdir();
+    const refEdges = path.join(tempDir, `ref-edges-${Date.now()}.png`);
+    const targetEdges = path.join(tempDir, `target-edges-${Date.now()}.png`);
+    
+    try {
+      // Extract edges using Canny edge detection
+      await execAsync(`convert "${reference}" -colorspace Gray -edge 1 -negate "${refEdges}"`);
+      await execAsync(`convert "${target}" -colorspace Gray -edge 1 -negate "${targetEdges}"`);
+      
+      // Scale down for faster processing
+      const refEdgesSmall = path.join(tempDir, `ref-edges-small-${Date.now()}.png`);
+      const targetEdgesSmall = path.join(tempDir, `target-edges-small-${Date.now()}.png`);
+      
+      await execAsync(`convert "${refEdges}" -resize 25% "${refEdgesSmall}"`);
+      await execAsync(`convert "${targetEdges}" -resize 25% "${targetEdgesSmall}"`);
+      
+      // Try subimage search on edge images
+      let bestResult = { score: Infinity, offset: { x: 0, y: 0 } };
+      
+      try {
+        const cmd = `compare -metric rmse -subimage-search "${refEdgesSmall}" "${targetEdgesSmall}" null: 2>&1`;
+        const result = await this.trySubimageSearch(cmd);
+        if (result.score < bestResult.score) {
+          // Scale offset back to original size
+          bestResult = {
+            score: result.score,
+            offset: {
+              x: result.offset.x * 4,
+              y: result.offset.y * 4
+            }
+          };
+        }
+      } catch (e) {
+        // Try reverse
+        try {
+          const cmd = `compare -metric rmse -subimage-search "${targetEdgesSmall}" "${refEdgesSmall}" null: 2>&1`;
+          const result = await this.trySubimageSearch(cmd);
+          if (result.score < bestResult.score) {
+            // Scale and invert offset
+            bestResult = {
+              score: result.score,
+              offset: {
+                x: -result.offset.x * 4,
+                y: -result.offset.y * 4
+              }
+            };
+          }
+        } catch (e2) {
+          // Continue with default
+        }
+      }
+      
+      // Clean up
+      await fs.unlink(refEdges).catch(() => {});
+      await fs.unlink(targetEdges).catch(() => {});
+      await fs.unlink(refEdgesSmall).catch(() => {});
+      await fs.unlink(targetEdgesSmall).catch(() => {});
+      
+      return bestResult;
+    } catch (error) {
+      throw new Error(`Edge-based alignment failed: ${error}`);
+    }
+  }
+
+  /**
+   * Try cropped region search - crop center regions and search
+   */
+  private async tryCroppedRegionSearch(reference: string, target: string): Promise<{ score: number; offset: { x: number; y: number } }> {
+    const tempDir = os.tmpdir();
+    const refSize = await this.getImageSize(reference);
+    const targetSize = await this.getImageSize(target);
+    
+    // Take center crops of different sizes
+    const cropSizes = [
+      { width: 800, height: 600 },
+      { width: 1000, height: 800 },
+      { width: 1200, height: 900 }
+    ];
+    
+    let bestResult = { score: Infinity, offset: { x: 0, y: 0 } };
+    
+    for (const cropSize of cropSizes) {
+      if (cropSize.width > Math.min(refSize.width, targetSize.width) ||
+          cropSize.height > Math.min(refSize.height, targetSize.height)) {
+        continue;
+      }
+      
+      try {
+        // Crop center regions
+        const refCropped = path.join(tempDir, `ref-crop-${Date.now()}.png`);
+        const targetCropped = path.join(tempDir, `target-crop-${Date.now()}.png`);
+        
+        const refCropX = Math.round((refSize.width - cropSize.width) / 2);
+        const refCropY = Math.round((refSize.height - cropSize.height) / 2);
+        const targetCropX = Math.round((targetSize.width - cropSize.width) / 2);
+        const targetCropY = Math.round((targetSize.height - cropSize.height) / 2);
+        
+        await execAsync(
+          `convert "${reference}" -crop ${cropSize.width}x${cropSize.height}+${refCropX}+${refCropY} +repage "${refCropped}"`
+        );
+        await execAsync(
+          `convert "${target}" -crop ${cropSize.width}x${cropSize.height}+${targetCropX}+${targetCropY} +repage "${targetCropped}"`
+        );
+        
+        // Compare cropped regions
+        try {
+          const result = await execAsync(`compare -metric RMSE "${refCropped}" "${targetCropped}" null: 2>&1`);
+          const output = result.stderr || result.stdout || "";
+          const score = parseFloat(output.split(' ')[0]) || Infinity;
+          
+          if (score < bestResult.score) {
+            // Calculate the offset based on crop positions
+            bestResult = {
+              score,
+              offset: {
+                x: targetCropX - refCropX,
+                y: targetCropY - refCropY
+              }
+            };
+          }
+        } catch (e) {
+          // Continue with next crop size
+        }
+        
+        // Clean up
+        await fs.unlink(refCropped).catch(() => {});
+        await fs.unlink(targetCropped).catch(() => {});
+      } catch (e) {
+        // Continue with next crop size
+      }
+    }
+    
+    return bestResult;
+  }
+
+  /**
+   * Try multi-scale search for partial overlaps
+   */
+  private async tryMultiScaleSearch(reference: string, target: string): Promise<{ score: number; offset: { x: number; y: number } }> {
+    const tempDir = os.tmpdir();
+    const scales = [1.0, 0.5, 0.25]; // Search at multiple scales
+    let bestResult = { score: Infinity, offset: { x: 0, y: 0 } };
+    
+    try {
+      for (const scale of scales) {
+        if (scale === 1.0) {
+          // At full scale, try finding common regions by cropping
+          const result = await this.findBestOverlap(reference, target);
+          if (result.score < bestResult.score) {
+            bestResult = result;
+          }
+        } else {
+          // At reduced scales, use standard subimage search
+          const scaledRef = path.join(tempDir, `ref-${scale}-${Date.now()}.png`);
+          const scaledTarget = path.join(tempDir, `target-${scale}-${Date.now()}.png`);
+          
+          // Scale down images
+          const scalePercent = Math.round(scale * 100);
+          await execAsync(`convert "${reference}" -resize ${scalePercent}% "${scaledRef}"`);
+          await execAsync(`convert "${target}" -resize ${scalePercent}% "${scaledTarget}"`);
+          
+          // Try subimage search at this scale
+          try {
+            const cmd = `compare -metric rmse -subimage-search "${scaledRef}" "${scaledTarget}" null: 2>&1`;
+            const result = await this.trySubimageSearch(cmd);
+            
+            // Scale offset back to original size
+            const scaledResult = {
+              score: result.score,
+              offset: {
+                x: Math.round(result.offset.x / scale),
+                y: Math.round(result.offset.y / scale)
+              }
+            };
+            
+            if (scaledResult.score < bestResult.score) {
+              bestResult = scaledResult;
+            }
+          } catch (e) {
+            // Try reverse search
+            try {
+              const cmd = `compare -metric rmse -subimage-search "${scaledTarget}" "${scaledRef}" null: 2>&1`;
+              const result = await this.trySubimageSearch(cmd);
+              
+              // Scale and invert offset
+              const scaledResult = {
+                score: result.score,
+                offset: {
+                  x: Math.round(-result.offset.x / scale),
+                  y: Math.round(-result.offset.y / scale)
+                }
+              };
+              
+              if (scaledResult.score < bestResult.score) {
+                bestResult = scaledResult;
+              }
+            } catch (e2) {
+              // Skip this scale
+            }
+          }
+          
+          // Clean up
+          await fs.unlink(scaledRef).catch(() => {});
+          await fs.unlink(scaledTarget).catch(() => {});
+        }
+      }
+      
+      return bestResult;
+    } catch (error) {
+      throw new Error(`Multi-scale search failed: ${error}`);
+    }
+  }
+
+  /**
+   * Find best overlap by testing different crop regions
+   */
+  private async findBestOverlap(reference: string, target: string): Promise<{ score: number; offset: { x: number; y: number } }> {
+    const refSize = await this.getImageSize(reference);
+    const targetSize = await this.getImageSize(target);
+    
+    // If images are similar size, they might just need alignment
+    const widthRatio = Math.min(refSize.width, targetSize.width) / Math.max(refSize.width, targetSize.width);
+    const heightRatio = Math.min(refSize.height, targetSize.height) / Math.max(refSize.height, targetSize.height);
+    
+    if (widthRatio > 0.7 && heightRatio > 0.7) {
+      // Images are similar size, try more comprehensive offset search
+      const offsets: Array<{x: number, y: number}> = [];
+      
+      // Generate a grid of offsets to test
+      const maxOffsetX = Math.round((Math.abs(refSize.width - targetSize.width) + 200) / 2);
+      const maxOffsetY = Math.round((Math.abs(refSize.height - targetSize.height) + 200) / 2);
+      const step = 50; // Step size for search
+      
+      for (let x = -maxOffsetX; x <= maxOffsetX; x += step) {
+        for (let y = -maxOffsetY; y <= maxOffsetY; y += step) {
+          offsets.push({ x, y });
+        }
+      }
+      
+      console.log(`Testing ${offsets.length} offsets for alignment...`);
+      
+      let bestResult = { score: Infinity, offset: { x: 0, y: 0 } };
+      
+      for (const offset of offsets) {
+        try {
+          // Create temporary aligned version
+          const tempAligned = path.join(os.tmpdir(), `aligned-test-${Date.now()}.png`);
+          await execAsync(
+            `convert -size ${refSize.width}x${refSize.height} xc:black "${target}" -geometry +${offset.x}+${offset.y} -composite "${tempAligned}"`
+          );
+          
+          // Compare
+          const result = await execAsync(`compare -metric RMSE "${reference}" "${tempAligned}" null: 2>&1`);
+          const output = result.stderr || result.stdout || "";
+          const score = parseFloat(output.split(' ')[0]) || Infinity;
+          
+          if (score < bestResult.score) {
+            bestResult = { score, offset };
+          }
+          
+          await fs.unlink(tempAligned).catch(() => {});
+        } catch (e) {
+          // Continue with next offset
+        }
+      }
+      
+      return bestResult;
+    }
+    
+    // For very different sizes, return no offset
+    return { score: Infinity, offset: { x: 0, y: 0 } };
+  }
+
+  /**
+   * Try phase correlation alignment
+   */
+  private async tryPhaseCorrelation(image1: string, image2: string): Promise<{ score: number; offset: { x: number; y: number } }> {
+    // Use FFT-based phase correlation
+    // This is a simplified implementation using ImageMagick's FFT
+    try {
+      // Convert images to grayscale and same size by padding
+      const tempDir = os.tmpdir();
+      const gray1 = path.join(tempDir, `gray1-${Date.now()}.png`);
+      const gray2 = path.join(tempDir, `gray2-${Date.now()}.png`);
+      
+      // Get max dimensions
+      const size1 = await this.getImageSize(image1);
+      const size2 = await this.getImageSize(image2);
+      const maxWidth = Math.max(size1.width, size2.width);
+      const maxHeight = Math.max(size1.height, size2.height);
+      
+      // Convert to grayscale and pad to same size
+      await execAsync(`convert "${image1}" -colorspace Gray -background black -extent ${maxWidth}x${maxHeight} "${gray1}"`);
+      await execAsync(`convert "${image2}" -colorspace Gray -background black -extent ${maxWidth}x${maxHeight} "${gray2}"`);
+      
+      // Use normalized cross-correlation
+      let output = "";
+      try {
+        const result = await execAsync(`compare -metric NCC "${gray1}" "${gray2}" null: 2>&1`);
+        output = result.stderr || result.stdout || "";
+      } catch (e) {
+        const execError = e as { stderr?: string; stdout?: string };
+        output = execError.stderr || execError.stdout || "";
+      }
+      
+      // Clean up temp files
+      await fs.unlink(gray1).catch(() => {});
+      await fs.unlink(gray2).catch(() => {});
+      
+      // Extract correlation score
+      const score = 1 - parseFloat(output.trim()); // Convert correlation to distance
+      
+      // For phase correlation, we'd need more complex FFT operations
+      // For now, return a default offset of 0,0 with the correlation score
+      return { score, offset: { x: 0, y: 0 } };
+    } catch (error) {
+      throw new Error(`Phase correlation failed: ${error}`);
     }
   }
 
@@ -325,6 +847,39 @@ export class ImageProcessor {
         }
       });
     });
+  }
+
+  /**
+   * Get image size using the same dimensions method
+   */
+  private async getImageSize(imagePath: string): Promise<{ width: number; height: number }> {
+    return this.getImageDimensions(imagePath);
+  }
+  
+  /**
+   * Create cropped versions of images showing only matching content
+   */
+  async createCroppedVersions(
+    image1Path: string,
+    image2Path: string,
+    matchingRegion: { x: number; y: number; width: number; height: number },
+    _offset: { x: number; y: number },
+    outputDir: string
+  ): Promise<{ cropped1: string; cropped2: string }> {
+    const cropped1 = path.join(outputDir, "cropped-reference.png");
+    const cropped2 = path.join(outputDir, "cropped-aligned.png");
+    
+    // Crop reference image to matching region
+    await execAsync(
+      `convert "${image1Path}" -crop ${matchingRegion.width}x${matchingRegion.height}+${matchingRegion.x}+${matchingRegion.y} +repage "${cropped1}"`
+    );
+    
+    // Crop aligned image to matching region
+    await execAsync(
+      `convert "${image2Path}" -crop ${matchingRegion.width}x${matchingRegion.height}+${matchingRegion.x}+${matchingRegion.y} +repage "${cropped2}"`
+    );
+    
+    return { cropped1, cropped2 };
   }
 
   /**

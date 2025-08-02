@@ -26,6 +26,8 @@ export interface SmartReportData {
     image1: string;
     image2: string;
     diffImage: string;
+    alignedImage1?: string;
+    alignedImage2?: string;
     timestamp: string;
     version: string;
   };
@@ -60,8 +62,11 @@ export class SmartReportGenerator {
    */
   generateSmartReport(data: SmartReportData, outputDir: string): string {
     const { metadata, statistics, classification, regions } = data;
-    const relativeImage1 = path.relative(outputDir, metadata.image1);
-    const relativeImage2 = path.relative(outputDir, metadata.image2);
+    // Use aligned images if available, otherwise fall back to original images
+    const displayImage1 = metadata.alignedImage1 || metadata.image1;
+    const displayImage2 = metadata.alignedImage2 || metadata.image2;
+    const relativeImage1 = path.relative(outputDir, displayImage1);
+    const relativeImage2 = path.relative(outputDir, displayImage2);
     const relativeDiff = path.relative(outputDir, metadata.diffImage);
 
     return `<!DOCTYPE html>
@@ -84,7 +89,7 @@ export class SmartReportGenerator {
 
         ${this.generateSummarySection(statistics, classification)}
         
-        ${this.options.includeImages ? this.generateImageSection(relativeImage1, relativeImage2, relativeDiff) : ""}
+        ${this.options.includeImages ? this.generateImageSection(relativeImage1, relativeImage2, relativeDiff, metadata) : ""}
         
         ${classification ? this.generateClassificationSection(classification) : ""}
         
@@ -259,9 +264,27 @@ export class SmartReportGenerator {
             transition: width 0.3s ease;
         }
 
+        .originals-display {
+            margin-bottom: 30px;
+        }
+
+        .originals-display h3 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .originals-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
         .image-comparison {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-top: 20px;
         }
@@ -733,10 +756,25 @@ export class SmartReportGenerator {
   /**
    * Generate image comparison section
    */
-  private generateImageSection(image1: string, image2: string, diff: string): string {
+  private generateImageSection(image1: string, image2: string, diff: string, metadata?: SmartReportData["metadata"]): string {
     return `
         <section class="section">
             <h2>Visual Comparison</h2>
+            
+            <!-- Original Images Display -->
+            <div class="originals-display">
+                <h3>Original Images</h3>
+                <div class="originals-grid">
+                    <div class="image-box">
+                        <img src="${metadata?.image1 ? path.relative(path.dirname(metadata.diffImage), metadata.image1) : image1}" alt="Original Reference" />
+                        <div class="image-label">Original Reference</div>
+                    </div>
+                    <div class="image-box">
+                        <img src="${metadata?.image2 ? path.relative(path.dirname(metadata.diffImage), metadata.image2) : image2}" alt="Original Target" />
+                        <div class="image-label">Original Target</div>
+                    </div>
+                </div>
+            </div>
             
             <!-- Before/After Slider -->
             <div class="slider-container" id="imageSlider">
@@ -777,12 +815,20 @@ export class SmartReportGenerator {
             
             <div class="image-comparison" style="display: none;">
                 <div class="image-box">
-                    <img src="${image1}" alt="Original Image" />
-                    <div class="image-label">Original</div>
+                    <img src="${metadata?.image1 ? path.relative(path.dirname(metadata.diffImage), metadata.image1) : image1}" alt="Original Reference" />
+                    <div class="image-label">Original Reference</div>
                 </div>
                 <div class="image-box">
-                    <img src="${image2}" alt="Compared Image" />
-                    <div class="image-label">Compared</div>
+                    <img src="${metadata?.image2 ? path.relative(path.dirname(metadata.diffImage), metadata.image2) : image2}" alt="Original Target" />
+                    <div class="image-label">Original Target</div>
+                </div>
+                <div class="image-box">
+                    <img src="${image1}" alt="Reference Image" />
+                    <div class="image-label">Reference (for comparison)</div>
+                </div>
+                <div class="image-box">
+                    <img src="${image2}" alt="Aligned Image" />
+                    <div class="image-label">Aligned Target</div>
                 </div>
                 <div class="image-box">
                     <img src="${diff}" alt="Difference" />

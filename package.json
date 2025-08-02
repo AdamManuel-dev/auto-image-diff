@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "ts-node",
+    "postinstall": "node scripts/setup-opencv.js || true",
     "test": "NODE_OPTIONS='--max-old-space-size=4096' jest",
     "test:watch": "NODE_OPTIONS='--max-old-space-size=4096' jest --watch",
     "test:coverage": "NODE_OPTIONS='--max-old-space-size=4096' jest --coverage",
@@ -82,10 +83,13 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@techstark/opencv-js": "^4.11.0-release.1",
+    "canvas": "^3.1.2",
     "commander": "^14.0.0",
     "dotenv": "^17.2.1",
     "gm": "^1.25.1",
     "imagemagick": "^0.1.3",
+    "opencv.js": "^1.2.1",
     "pixelmatch": "^7.1.0",
     "sharp": "^0.34.3"
   }

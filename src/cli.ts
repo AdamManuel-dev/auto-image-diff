@@ -12,7 +12,7 @@
 
 import { Command } from "commander";
 import * as path from "path";
-import { ImageProcessor } from "./lib/imageProcessor";
+import { ImageProcessor, AlignmentOptions } from "./lib/imageProcessor";
 import { BatchProcessor } from "./lib/batchProcessor";
 import * as fs from "fs/promises";
 import { parseExclusionFile } from "./lib/exclusions";
@@ -75,18 +75,20 @@ program
   .argument("<reference>", "Reference image path")
   .argument("<target>", "Target image path to align")
   .argument("<output>", "Output path for aligned image")
-  .option("-m, --method <method>", "Alignment method (feature|phase|subimage)", "subimage")
+  .option("-m, --method <method>", "Alignment method (opencv|feature|phase|subimage)", "subimage")
+  .option("--opencv-detector <detector>", "OpenCV detector type (orb|akaze|brisk)", "orb")
   .action(
     async (
       reference: string,
       target: string,
       output: string,
-      options: { method: "feature" | "phase" | "subimage" }
+      options: { method: "opencv" | "feature" | "phase" | "subimage"; opencvDetector?: string }
     ) => {
       try {
         console.log("Aligning images...");
         await imageProcessor.alignImages(reference, target, output, {
           method: options.method,
+          opencvDetector: options.opencvDetector as "orb" | "akaze" | "brisk",
         });
         console.log(`✅ Aligned image saved to: ${output}`);
       } catch (error) {
@@ -302,6 +304,9 @@ program
                 image1,
                 image2,
                 diffImage: output,
+                // For diff command, images should already be aligned
+                alignedImage1: image1,
+                alignedImage2: image2,
                 timestamp: new Date().toISOString(),
                 version: "1.0",
               },
@@ -343,12 +348,14 @@ program
   .option("-c, --color <color>", "Highlight color for differences", "red")
   .option("-e, --exclude <regions>", "Path to exclusions.json file defining regions to ignore")
   .option("-s, --smart", "Run smart classification on differences")
+  .option("-m, --method <method>", "Alignment method (opencv|subimage)", "subimage")
+  .option("--opencv-detector <detector>", "OpenCV detector type (orb|akaze|brisk)", "orb")
   .action(
     async (
       reference: string,
       target: string,
       outputDir: string,
-      options: { threshold: string; color: string; exclude?: string; smart?: boolean }
+      options: { threshold: string; color: string; exclude?: string; smart?: boolean; method?: string; opencvDetector?: string }
     ) => {
       try {
         // Ensure output directory exists
@@ -374,12 +381,32 @@ program
 
         // Step 1: Align images
         console.log("Step 1/2: Aligning images...");
-        await imageProcessor.alignImages(reference, target, alignedPath);
+        const alignmentResult = await imageProcessor.alignImages(reference, target, alignedPath, {
+          method: (options.method as AlignmentOptions["method"]) || "subimage",
+          opencvDetector: options.opencvDetector as "orb" | "akaze" | "brisk",
+        });
         console.log(`✅ Aligned image saved to: ${alignedPath}`);
+        
+        // Create cropped versions if there's a matching region
+        let croppedVersions: { cropped1: string; cropped2: string } | undefined;
+        if (alignmentResult.matchingRegion && alignmentResult.matchingRegion.width > 0 && alignmentResult.matchingRegion.height > 0) {
+          croppedVersions = await imageProcessor.createCroppedVersions(
+            reference,
+            alignedPath,
+            alignmentResult.matchingRegion,
+            alignmentResult.offset,
+            outputDir
+          );
+          console.log(`✅ Created cropped versions showing matching content`);
+        }
 
         // Step 2: Generate diff
         console.log("Step 2/2: Generating diff...");
-        const result = await imageProcessor.generateDiff(reference, alignedPath, diffPath, {
+        // Use cropped versions for diff if they exist (to compare only overlapping regions)
+        const image1ForDiff = croppedVersions ? croppedVersions.cropped1 : reference;
+        const image2ForDiff = croppedVersions ? croppedVersions.cropped2 : alignedPath;
+        
+        const result = await imageProcessor.generateDiff(image1ForDiff, image2ForDiff, diffPath, {
           highlightColor: options.color,
           exclusions,
           runClassification: options.smart,
@@ -427,6 +454,39 @@ program
           `   - Percentage different: ${result.statistics.percentageDifferent.toFixed(2)}%`
         );
         console.log(`   - Result: Images are ${result.isEqual ? "equal" : "different"}`);
+
+        // Generate HTML report if smart classification was run
+        if (options.smart && result.classification) {
+          const htmlReportPath = path.join(outputDir, "smart-report.html");
+          const reportGenerator = new SmartReportGenerator();
+          const htmlReport = reportGenerator.generateSmartReport(
+            {
+              metadata: {
+                image1: reference,
+                image2: target,
+                diffImage: diffPath,
+                // Use aligned images for display
+                alignedImage1: croppedVersions?.cropped1 || reference,
+                alignedImage2: croppedVersions?.cropped2 || alignedPath,
+                timestamp: new Date().toISOString(),
+                version: "1.0",
+              },
+              statistics: result.statistics,
+              classification: result.classification,
+              regions: result.classification.regions.map((r) => ({
+                id: r.region.id,
+                bounds: r.region.bounds,
+                type: r.classification.type,
+                confidence: r.classification.confidence,
+                classifier: r.classifier,
+                details: r.classification.details,
+              })),
+            },
+            outputDir
+          );
+          await fs.writeFile(htmlReportPath, htmlReport);
+          console.log(`\n📄 Smart HTML report saved to: ${htmlReportPath}`);
+        }
       } catch (error) {
         console.error(
           "❌ Error in comparison:",

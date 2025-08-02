@@ -44,6 +44,7 @@ auto-image-diff uses ImageMagick's powerful image processing capabilities to:
 - 🏷️ **Metadata Embedding**: Embed comparison data directly in PNG files
 - 📈 **Interactive Reports**: HTML reports with before/after sliders and visualizations
 - 🔍 **Smart File Pairing**: Fuzzy matching for batch comparisons
+- 🔬 **OpenCV Support**: Advanced feature-based alignment (experimental)
 
 ## 📦 Installation
 
